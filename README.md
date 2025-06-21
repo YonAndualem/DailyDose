@@ -1,4 +1,4 @@
-# Daily Motivation App
+# DailyDose
 
 A simple React Native app that brings you daily motivational quotes. Reload for new inspiration, share your favorites, and keep track of the quotes that move you—all with a clean, beginner-friendly design.
 
@@ -56,8 +56,8 @@ It focuses on core concepts such as navigation, local storage, UI components, an
 
 1. **Clone the repo:**  
    ```bash
-   git clone https://github.com/your-username/daily-motivation-app.git
-   cd daily-motivation-app
+   git clone https://github.com/your-username/dailydose.git
+   cd dailydose
    ```
 
 2. **Install dependencies:**  
