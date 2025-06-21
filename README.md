@@ -1,50 +1,90 @@
-# Welcome to your Expo app 👋
+# Daily Motivation App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A simple React Native app that brings you daily motivational quotes. Reload for new inspiration, share your favorites, and keep track of the quotes that move you—all with a clean, beginner-friendly design.
 
-## Get started
+---
 
-1. Install dependencies
+## 🚀 Features
 
+- **Display Daily Quote:**  
+  Shows a motivational quote on the main screen, along with today’s date.
+
+- **Reload Quote:**  
+  Tap a button to get a new, randomly selected quote.
+
+- **Share Quote:**  
+  Share the currently displayed quote via other apps or copy it to your clipboard.
+
+- **Favorite Quotes:**  
+  Mark quotes as favorites and view your saved favorites in a dedicated screen. Favorites are stored locally on your device.
+
+- **Quote History:**  
+  See a list of all quotes shown in your current app session.
+
+- **(Optional) Theme Switcher:**  
+  Toggle between light and dark mode for a more personalized look.
+
+---
+
+## 🏗️ Planned Features
+
+- **Daily Notification (Stretch Goal):**  
+  Receive a daily notification with a motivational quote.
+
+- **Home Screen Widget (Post-Core):**  
+  Add a widget to your Android home screen to see quotes without opening the app.
+
+---
+
+## 📱 Tech Stack
+
+- [React Native](https://reactnative.dev/)
+- Local storage with AsyncStorage
+- Native sharing and clipboard APIs
+- Simple, modular component structure
+
+---
+
+## 🎯 Project Goals
+
+This app is designed as a learning project for React Native beginners.  
+It focuses on core concepts such as navigation, local storage, UI components, and basic native integrations.
+
+---
+
+## 🛠️ Getting Started
+
+1. **Clone the repo:**  
+   ```bash
+   git clone https://github.com/your-username/daily-motivation-app.git
+   cd daily-motivation-app
+   ```
+
+2. **Install dependencies:**  
    ```bash
    npm install
    ```
 
-2. Start the app
-
+3. **Run Metro Bundler:**  
    ```bash
-   npx expo start
+   npm start
    ```
 
-In the output, you'll find options to open the app in a
+4. **Launch on Android device:**  
+   ```bash
+   npm run android
+   ```
+   > For wireless debugging, ensure your device is connected via `adb` over Wi-Fi.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🤝 Contributing
 
-## Get a fresh project
+Pull requests and suggestions are welcome!  
+Feel free to open an issue for feature requests or questions.
 
-When you're ready, run:
+---
 
-```bash
-npm run reset-project
-```
+## 📄 License
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+This project is open source and free to use for learning and inspiration.
