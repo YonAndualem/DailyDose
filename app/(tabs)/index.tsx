@@ -6,11 +6,20 @@ export default function HomeScreen() {
     const [currentQuote, setCurrentQuote] = useState(quotes[0]);
     const today = new Date().toLocaleDateString();
 
+    // Function to get a random quote (not the same as current)
+    function reloadQuote() {
+        let newQuote = currentQuote;
+        while (newQuote === currentQuote && quotes.length > 1) {
+            newQuote = quotes[Math.floor(Math.random() * quotes.length)];
+        }
+        setCurrentQuote(newQuote);
+    }
+
     return (
         <View style={styles.container}>
             <Text style={styles.date}>{today}</Text>
             <Text style={styles.quote}>{currentQuote}</Text>
-            <Button title="Reload" onPress={() => { /* Add reload logic next */ }} />
+            <Button title="Reload" onPress={reloadQuote} />
         </View>
     );
 }
