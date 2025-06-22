@@ -1,10 +1,35 @@
-import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, Share } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Button, StyleSheet, Share, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { quotes } from '../../constants/quotes';
+
+const FAVORITES_KEY = 'DAILYDOSE_FAVORITES';
 
 export default function HomeScreen() {
     const [currentQuote, setCurrentQuote] = useState(quotes[0]);
+    const [favorites, setFavorites] = useState<string[]>([]);
     const today = new Date().toLocaleDateString();
+
+    useEffect(() => {
+        loadFavorites();
+    }, []);
+
+    async function loadFavorites() {
+        try {
+            const value = await AsyncStorage.getItem(FAVORITES_KEY);
+            if (value) setFavorites(JSON.parse(value));
+        } catch (e) {
+            // handle error
+        }
+    }
+
+    async function saveFavorites(newFavorites: string[]) {
+        try {
+            await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));
+        } catch (e) {
+            // handle error
+        }
+    }
 
     function reloadQuote() {
         let newQuote = currentQuote;
@@ -24,6 +49,27 @@ export default function HomeScreen() {
         }
     };
 
+    const isFavorite = favorites.includes(currentQuote);
+
+    const toggleFavorite = async () => {
+        let newFavorites;
+        if (isFavorite) {
+            newFavorites = favorites.filter(q => q !== currentQuote);
+        } else {
+            newFavorites = [...favorites, currentQuote];
+        }
+        setFavorites(newFavorites);
+        await saveFavorites(newFavorites);
+    };
+
+    const showFavorites = () => {
+        if (favorites.length === 0) {
+            Alert.alert('Favorites', 'You have no favorite quotes yet!');
+            return;
+        }
+        Alert.alert('Favorites', favorites.join('\n\n'));
+    };
+
     return (
         <View style={styles.container}>
             <Text style={styles.date}>{today}</Text>
@@ -31,6 +77,14 @@ export default function HomeScreen() {
             <Button title="Reload" onPress={reloadQuote} />
             <View style={{ height: 10 }} />
             <Button title="Share" onPress={shareQuote} />
+            <View style={{ height: 10 }} />
+            <Button
+                title={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+                onPress={toggleFavorite}
+                color={isFavorite ? "#e63946" : "#457b9d"}
+            />
+            <View style={{ height: 10 }} />
+            <Button title="Show Favorites" onPress={showFavorites} />
         </View>
     );
 }
