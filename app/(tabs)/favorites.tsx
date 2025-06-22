@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Button, Alert, Share, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Button, Alert, Share, TouchableOpacity, TextInput } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 
 const FAVORITES_KEY = 'DAILYDOSE_FAVORITES';
 
@@ -9,13 +11,16 @@ export default function FavoritesScreen() {
     const [recentlyRemoved, setRecentlyRemoved] = useState<string | null>(null);
     const [undoVisible, setUndoVisible] = useState(false);
     const [undoTimeout, setUndoTimeout] = useState<NodeJS.Timeout | null>(null);
+    const [search, setSearch] = useState('');
 
-    useEffect(() => {
-        loadFavorites();
-        return () => {
-            if (undoTimeout) clearTimeout(undoTimeout);
-        };
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            loadFavorites();
+            return () => {
+                if (undoTimeout) clearTimeout(undoTimeout);
+            };
+        }, [undoTimeout])
+      );
 
     async function loadFavorites() {
         try {
@@ -42,7 +47,7 @@ export default function FavoritesScreen() {
         const timeout = setTimeout(() => {
             setUndoVisible(false);
             setRecentlyRemoved(null);
-        }, 5000); // 5 seconds
+        }, 5000) as unknown as NodeJS.Timeout; // 5 seconds
         setUndoTimeout(timeout);
     }
 
@@ -67,11 +72,22 @@ export default function FavoritesScreen() {
         }
     }
 
+    // Filter favorites based on search input (case-insensitive)
+    const filteredFavorites = favorites.filter(q =>
+        q.toLowerCase().includes(search.trim().toLowerCase())
+    );
+
     return (
         <View style={styles.container}>
             <Text style={styles.heading}>Your Favorite Quotes</Text>
+            <TextInput
+                style={styles.searchInput}
+                placeholder="Search favorites..."
+                value={search}
+                onChangeText={setSearch}
+            />
             <FlatList
-                data={favorites}
+                data={filteredFavorites}
                 keyExtractor={(item, idx) => idx.toString()}
                 renderItem={({ item }) => (
                     <View style={styles.quoteContainer}>
@@ -102,6 +118,15 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1, padding: 24, backgroundColor: '#fff' },
     heading: { fontSize: 22, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' },
+    searchInput: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        marginBottom: 16,
+        fontSize: 16,
+    },
     quoteContainer: { marginBottom: 18, padding: 16, backgroundColor: '#f1f1f1', borderRadius: 8 },
     quote: { fontSize: 18, fontStyle: 'italic', color: '#333', marginBottom: 8 },
     buttonRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
