@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Button, Alert } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Button, Alert, Share } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FAVORITES_KEY = 'DAILYDOSE_FAVORITES';
@@ -10,10 +10,6 @@ export default function FavoritesScreen() {
     useEffect(() => {
         loadFavorites();
     }, []);
-
-    // Reload favorites when coming back to this screen
-    // (optional: only needed if favorites can change from another screen)
-    // useFocusEffect(() => { loadFavorites(); });
 
     async function loadFavorites() {
         try {
@@ -34,6 +30,16 @@ export default function FavoritesScreen() {
         }
     }
 
+    async function shareFavorite(quote: string) {
+        try {
+            await Share.share({
+                message: `"${quote}"\n\nShared from DailyDose ✨`,
+            });
+        } catch (error) {
+            Alert.alert('Error', 'Failed to share the quote.');
+        }
+    }
+
     return (
         <View style={styles.container}>
             <Text style={styles.heading}>Your Favorite Quotes</Text>
@@ -43,7 +49,11 @@ export default function FavoritesScreen() {
                 renderItem={({ item }) => (
                     <View style={styles.quoteContainer}>
                         <Text style={styles.quote}>"{item}"</Text>
-                        <Button title="Remove" color="#e63946" onPress={() => removeFavorite(item)} />
+                        <View style={styles.buttonRow}>
+                            <Button title="Share" color="#457b9d" onPress={() => shareFavorite(item)} />
+                            <View style={{ width: 10 }} />
+                            <Button title="Remove" color="#e63946" onPress={() => removeFavorite(item)} />
+                        </View>
                     </View>
                 )}
                 ListEmptyComponent={<Text style={styles.emptyText}>No favorites yet!</Text>}
@@ -57,5 +67,6 @@ const styles = StyleSheet.create({
     heading: { fontSize: 22, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' },
     quoteContainer: { marginBottom: 18, padding: 16, backgroundColor: '#f1f1f1', borderRadius: 8 },
     quote: { fontSize: 18, fontStyle: 'italic', color: '#333', marginBottom: 8 },
+    buttonRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
     emptyText: { textAlign: 'center', color: '#888', marginTop: 40, fontSize: 16 },
 });
