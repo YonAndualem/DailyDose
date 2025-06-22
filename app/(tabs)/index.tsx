@@ -1,35 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet, Share, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState } from 'react';
+import { View, Text, Button, StyleSheet, Share } from 'react-native';
 import { quotes } from '../../constants/quotes';
-
-const FAVORITES_KEY = 'DAILYDOSE_FAVORITES';
+import { useFavorites } from '../context/FavoritesContext';
 
 export default function HomeScreen() {
     const [currentQuote, setCurrentQuote] = useState(quotes[0]);
-    const [favorites, setFavorites] = useState<string[]>([]);
+    const { favorites, addFavorite, removeFavorite } = useFavorites();
     const today = new Date().toLocaleDateString();
-
-    useEffect(() => {
-        loadFavorites();
-    }, []);
-
-    async function loadFavorites() {
-        try {
-            const value = await AsyncStorage.getItem(FAVORITES_KEY);
-            if (value) setFavorites(JSON.parse(value));
-        } catch (e) {
-            // handle error
-        }
-    }
-
-    async function saveFavorites(newFavorites: string[]) {
-        try {
-            await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));
-        } catch (e) {
-            // handle error
-        }
-    }
 
     function reloadQuote() {
         let newQuote = currentQuote;
@@ -51,23 +28,8 @@ export default function HomeScreen() {
 
     const isFavorite = favorites.includes(currentQuote);
 
-    const toggleFavorite = async () => {
-        let newFavorites;
-        if (isFavorite) {
-            newFavorites = favorites.filter(q => q !== currentQuote);
-        } else {
-            newFavorites = [...favorites, currentQuote];
-        }
-        setFavorites(newFavorites);
-        await saveFavorites(newFavorites);
-    };
-
-    const showFavorites = () => {
-        if (favorites.length === 0) {
-            Alert.alert('Favorites', 'You have no favorite quotes yet!');
-            return;
-        }
-        Alert.alert('Favorites', favorites.join('\n\n'));
+    const toggleFavorite = () => {
+        isFavorite ? removeFavorite(currentQuote) : addFavorite(currentQuote);
     };
 
     return (
@@ -83,8 +45,6 @@ export default function HomeScreen() {
                 onPress={toggleFavorite}
                 color={isFavorite ? "#e63946" : "#457b9d"}
             />
-            <View style={{ height: 10 }} />
-            <Button title="Show Favorites" onPress={showFavorites} />
         </View>
     );
 }

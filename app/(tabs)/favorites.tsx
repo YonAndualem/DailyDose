@@ -1,81 +1,48 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Button, Alert, Share, TouchableOpacity, TextInput } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
-
-const FAVORITES_KEY = 'DAILYDOSE_FAVORITES';
+import React, { useState } from 'react';
+import { View, Text, FlatList, StyleSheet, Button, Share, TouchableOpacity, TextInput } from 'react-native';
+import { useFavorites } from '../context/FavoritesContext';
 
 export default function FavoritesScreen() {
-    const [favorites, setFavorites] = useState<string[]>([]);
+    const { favorites, removeFavorite, addFavorite } = useFavorites();
+    const [search, setSearch] = useState('');
     const [recentlyRemoved, setRecentlyRemoved] = useState<string | null>(null);
     const [undoVisible, setUndoVisible] = useState(false);
-    const [undoTimeout, setUndoTimeout] = useState<NodeJS.Timeout | null>(null);
-    const [search, setSearch] = useState('');
+    const [undoTimeout, setUndoTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
 
-    useFocusEffect(
-        useCallback(() => {
-            loadFavorites();
-            return () => {
-                if (undoTimeout) clearTimeout(undoTimeout);
-            };
-        }, [undoTimeout])
-      );
+    const filteredFavorites = favorites.filter(q =>
+        q.toLowerCase().includes(search.trim().toLowerCase())
+    );
 
-    async function loadFavorites() {
+    const shareFavorite = async (quote: string) => {
         try {
-            const value = await AsyncStorage.getItem(FAVORITES_KEY);
-            if (value) setFavorites(JSON.parse(value));
-        } catch (e) { }
-    }
-
-    async function saveFavorites(newFavorites: string[]) {
-        try {
-            await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));
-        } catch (e) {
-            Alert.alert('Error', 'Failed to update favorites.');
+            await Share.share({
+                message: `"${quote}"\n\nShared from DailyDose ✨`,
+            });
+        } catch (error) {
+            alert('Failed to share the quote.');
         }
-    }
+    };
 
-    async function removeFavorite(quote: string) {
-        const newFavorites = favorites.filter(item => item !== quote);
-        setFavorites(newFavorites);
-        await saveFavorites(newFavorites);
+    const handleRemove = (quote: string) => {
+        removeFavorite(quote);
         setRecentlyRemoved(quote);
         setUndoVisible(true);
         if (undoTimeout) clearTimeout(undoTimeout);
         const timeout = setTimeout(() => {
             setUndoVisible(false);
             setRecentlyRemoved(null);
-        }, 5000) as unknown as NodeJS.Timeout; // 5 seconds
+        }, 5000);
         setUndoTimeout(timeout);
-    }
+    };
 
-    async function undoRemove() {
+    const handleUndo = () => {
         if (recentlyRemoved) {
-            const newFavorites = [recentlyRemoved, ...favorites];
-            setFavorites(newFavorites);
-            await saveFavorites(newFavorites);
+            addFavorite(recentlyRemoved);
         }
         setUndoVisible(false);
         setRecentlyRemoved(null);
         if (undoTimeout) clearTimeout(undoTimeout);
-    }
-
-    async function shareFavorite(quote: string) {
-        try {
-            await Share.share({
-                message: `"${quote}"\n\nShared from DailyDose ✨`,
-            });
-        } catch (error) {
-            Alert.alert('Error', 'Failed to share the quote.');
-        }
-    }
-
-    // Filter favorites based on search input (case-insensitive)
-    const filteredFavorites = favorites.filter(q =>
-        q.toLowerCase().includes(search.trim().toLowerCase())
-    );
+    };
 
     return (
         <View style={styles.container}>
@@ -95,7 +62,7 @@ export default function FavoritesScreen() {
                         <View style={styles.buttonRow}>
                             <Button title="Share" color="#457b9d" onPress={() => shareFavorite(item)} />
                             <View style={{ width: 10 }} />
-                            <Button title="Remove" color="#e63946" onPress={() => removeFavorite(item)} />
+                            <Button title="Remove" color="#e63946" onPress={() => handleRemove(item)} />
                         </View>
                     </View>
                 )}
@@ -106,7 +73,7 @@ export default function FavoritesScreen() {
             {undoVisible && recentlyRemoved && (
                 <View style={styles.snackbar}>
                     <Text style={{ color: '#fff', flex: 1 }}>Quote removed.</Text>
-                    <TouchableOpacity onPress={undoRemove}>
+                    <TouchableOpacity onPress={handleUndo}>
                         <Text style={styles.undoText}>UNDO</Text>
                     </TouchableOpacity>
                 </View>
