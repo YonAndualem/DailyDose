@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, Share } from 'react-native';
+import { Button, Share, StyleSheet, Text, View } from 'react-native';
 import { quotes } from '../../constants/quotes';
-import { useFavorites } from '../context/FavoritesContext';
+import { useFavorites } from '../../context/FavoritesContext';
 
 export default function HomeScreen() {
     const [currentQuote, setCurrentQuote] = useState(quotes[0]);

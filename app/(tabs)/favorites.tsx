@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Button, Share, TouchableOpacity, TextInput } from 'react-native';
-import { useFavorites } from '../context/FavoritesContext';
+import { Button, FlatList, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useFavorites } from '../../context/FavoritesContext';
 
 export default function FavoritesScreen() {
     const { favorites, removeFavorite, addFavorite } = useFavorites();
