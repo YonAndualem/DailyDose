@@ -1,19 +1,24 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Button, ActivityIndicator, Alert, StyleSheet, TouchableOpacity } from "react-native";
-import { getQuoteOfTheDay, getAllQuoteIds, getQuoteById, Quote } from "../utils/api";
+import { View, Text, ActivityIndicator, Alert, StyleSheet, TouchableOpacity } from "react-native";
+import { getQuoteOfTheDay, getAllCategories, getQuoteIdsByCategory, getQuoteById, Quote } from "../utils/api";
 import { Ionicons } from "@expo/vector-icons";
+import { Picker } from "@react-native-picker/picker";
 
 export default function Index() {
   // QOTD state
   const [qotd, setQotd] = useState<Quote | null>(null);
   const [qotdLoading, setQotdLoading] = useState(true);
 
+  // Categories state
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+
   // Random quote state
   const [randomQuote, setRandomQuote] = useState<Quote | null>(null);
   const [randomQuoteLoading, setRandomQuoteLoading] = useState(true);
-  const [allIds, setAllIds] = useState<number[]>([]);
+  const [availableIds, setAvailableIds] = useState<number[]>([]);
 
-  // Fetch QOTD once on mount
+  // QOTD fetch
   useEffect(() => {
     const fetchQotd = async () => {
       setQotdLoading(true);
@@ -28,32 +33,53 @@ export default function Index() {
     fetchQotd();
   }, []);
 
-  // Fetch all IDs once on mount, and load first random quote
+  // Categories fetch
   useEffect(() => {
-    const fetchIdsAndFirstQuote = async () => {
+    const fetchCategories = async () => {
+      try {
+        const cats = await getAllCategories();
+        setCategories(cats);
+      } catch (e: any) {
+        Alert.alert("Error", e.message || "Failed to load categories.");
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Effect: Load quote ids for current category
+  useEffect(() => {
+    const fetchQuoteIds = async () => {
       setRandomQuoteLoading(true);
       try {
-        const ids = await getAllQuoteIds();
-        setAllIds(ids);
+        let ids: number[] = [];
+        if (selectedCategory && selectedCategory !== "All") {
+          ids = await getQuoteIdsByCategory(selectedCategory);
+        } else {
+          // fallback: get all ids
+          ids = await getQuoteIdsByCategory(""); // Or use your getAllQuoteIds if needed
+        }
+        setAvailableIds(ids);
         if (ids.length > 0) {
           const id = ids[Math.floor(Math.random() * ids.length)];
           const data = await getQuoteById(id);
           setRandomQuote(data);
+        } else {
+          setRandomQuote(null);
         }
       } catch (e: any) {
         Alert.alert("Error", e.message || "Failed to load random quote.");
       }
       setRandomQuoteLoading(false);
     };
-    fetchIdsAndFirstQuote();
-  }, []);
+    fetchQuoteIds();
+  }, [selectedCategory]);
 
   // Reload random quote
   const reloadRandomQuote = async () => {
-    if (allIds.length === 0) return;
+    if (availableIds.length === 0) return;
     setRandomQuoteLoading(true);
     try {
-      const id = allIds[Math.floor(Math.random() * allIds.length)];
+      const id = availableIds[Math.floor(Math.random() * availableIds.length)];
       const data = await getQuoteById(id);
       setRandomQuote(data);
     } catch (e: any) {
@@ -79,6 +105,21 @@ export default function Index() {
         )}
       </View>
 
+      {/* Category Picker */}
+      <View style={styles.pickerWrapper}>
+        <Text style={styles.pickerLabel}>Category:</Text>
+        <Picker
+          selectedValue={selectedCategory}
+          style={styles.picker}
+          onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+        >
+          <Picker.Item label="All" value="" />
+          {categories.map((cat) => (
+            <Picker.Item key={cat.id} label={cat.name} value={cat.name} />
+          ))}
+        </Picker>
+      </View>
+
       {/* Card 2: Random Quote */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Random Quote</Text>
@@ -94,7 +135,7 @@ export default function Index() {
             </TouchableOpacity>
           </>
         ) : (
-          <Text style={styles.error}>Could not load random quote</Text>
+          <Text style={styles.error}>No quotes found for this category</Text>
         )}
       </View>
     </View>
@@ -117,7 +158,10 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 20, fontWeight: "bold", marginBottom: 10, color: "#222" },
   quoteText: { fontSize: 18, fontStyle: "italic", textAlign: "center", color: "#222", marginBottom: 14 },
   authorText: { fontSize: 15, color: "#555", textAlign: "center", marginBottom: 14 },
+  error: { color: "#d72660", marginBottom: 18, fontSize: 16, textAlign: "center" },
+  pickerWrapper: { flexDirection: "row", alignItems: "center", marginBottom: 10, paddingHorizontal: 10 },
+  pickerLabel: { fontSize: 16, marginRight: 10, color: "#222" },
+  picker: { flex: 1, height: 44 },
   reloadButton: { alignItems: "center", justifyContent: "center" },
   reloadLabel: { fontSize: 13, color: "#555", marginTop: 3 },
-  error: { color: "#d72660", marginBottom: 18, fontSize: 16, textAlign: "center" },
 });
