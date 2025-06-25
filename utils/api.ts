@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://dailydose-backend-lao8.onrender.com/api";
+const API_BASE_URL = "https://daily-dose-backend-yonas-berhanu-andualems-projects.vercel.app/api";
 
 export interface Quote {
     id: number;

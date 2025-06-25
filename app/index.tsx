@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator, Alert, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, ActivityIndicator, Alert, StyleSheet, TouchableOpacity, ScrollView, Share } from "react-native";
 import { getQuoteOfTheDay, getAllCategories, getQuoteIdsByCategory, getQuoteById, Quote } from "../utils/api";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
+import { addFavorite, removeFavorite, isFavorite } from "../utils/favorites";
+import { useRouter } from "expo-router";
 
 export default function Index() {
+  const router = useRouter();
+
   // QOTD state
   const [qotd, setQotd] = useState<Quote | null>(null);
   const [qotdLoading, setQotdLoading] = useState(true);
+  const [qotdIsFavorite, setQotdIsFavorite] = useState(false);
 
   // Categories state
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
@@ -17,6 +22,7 @@ export default function Index() {
   const [randomQuote, setRandomQuote] = useState<Quote | null>(null);
   const [randomQuoteLoading, setRandomQuoteLoading] = useState(true);
   const [availableIds, setAvailableIds] = useState<number[]>([]);
+  const [randomIsFavorite, setRandomIsFavorite] = useState(false);
 
   // QOTD fetch
   useEffect(() => {
@@ -25,6 +31,7 @@ export default function Index() {
       try {
         const data = await getQuoteOfTheDay();
         setQotd(data);
+        setQotdIsFavorite(await isFavorite(data.id));
       } catch (e: any) {
         Alert.alert("Error", e.message || "Failed to load quote of the day.");
       }
@@ -51,20 +58,16 @@ export default function Index() {
     const fetchQuoteIds = async () => {
       setRandomQuoteLoading(true);
       try {
-        let ids: number[] = [];
-        if (selectedCategory && selectedCategory !== "All") {
-          ids = await getQuoteIdsByCategory(selectedCategory);
-        } else {
-          // fallback: get all ids
-          ids = await getQuoteIdsByCategory(""); // Or use your getAllQuoteIds if needed
-        }
+        const ids = await getQuoteIdsByCategory(selectedCategory);
         setAvailableIds(ids);
         if (ids.length > 0) {
           const id = ids[Math.floor(Math.random() * ids.length)];
           const data = await getQuoteById(id);
           setRandomQuote(data);
+          setRandomIsFavorite(await isFavorite(data.id));
         } else {
           setRandomQuote(null);
+          setRandomIsFavorite(false);
         }
       } catch (e: any) {
         Alert.alert("Error", e.message || "Failed to load random quote.");
@@ -82,17 +85,70 @@ export default function Index() {
       const id = availableIds[Math.floor(Math.random() * availableIds.length)];
       const data = await getQuoteById(id);
       setRandomQuote(data);
+      setRandomIsFavorite(await isFavorite(data.id));
     } catch (e: any) {
       Alert.alert("Error", e.message || "Failed to load random quote.");
     }
     setRandomQuoteLoading(false);
   };
 
+  // Toggle favorite for QOTD
+  const toggleQotdFavorite = async () => {
+    if (!qotd) return;
+    if (qotdIsFavorite) {
+      await removeFavorite(qotd.id);
+      setQotdIsFavorite(false);
+    } else {
+      await addFavorite(qotd);
+      setQotdIsFavorite(true);
+    }
+  };
+
+  // Toggle favorite for Random Quote
+  const toggleRandomFavorite = async () => {
+    if (!randomQuote) return;
+    if (randomIsFavorite) {
+      await removeFavorite(randomQuote.id);
+      setRandomIsFavorite(false);
+    } else {
+      await addFavorite(randomQuote);
+      setRandomIsFavorite(true);
+    }
+  };
+
+  const shareQuote = async (quote?: Quote) => {
+    if (!quote) return;
+    try {
+      await Share.share({
+        message: `"${quote.quote}" — ${quote.author}`,
+      });
+    } catch (error) {
+      Alert.alert("Error", "Could not open share dialog.");
+    }
+  };
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       {/* Card 1: Quote of the Day */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Quote of the Day</Text>
+        <View style={styles.cardHeader}>
+          <Text style={styles.sectionTitle}>Quote of the Day</Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {!qotdLoading && qotd && (
+              <>
+                <TouchableOpacity onPress={() => shareQuote(qotd)} style={{ marginRight: 12 }}>
+                  <Ionicons name="share-social-outline" size={26} color="#4a90e2" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={toggleQotdFavorite}>
+                  <Ionicons
+                    name={qotdIsFavorite ? "heart" : "heart-outline"}
+                    size={28}
+                    color="#d72660"
+                  />
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
         {qotdLoading ? (
           <ActivityIndicator size="large" />
         ) : qotd ? (
@@ -111,7 +167,7 @@ export default function Index() {
         <Picker
           selectedValue={selectedCategory}
           style={styles.picker}
-          onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+          onValueChange={setSelectedCategory}
         >
           <Picker.Item label="All" value="" />
           {categories.map((cat) => (
@@ -122,7 +178,25 @@ export default function Index() {
 
       {/* Card 2: Random Quote */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Random Quote</Text>
+        <View style={styles.cardHeader}>
+          <Text style={styles.sectionTitle}>Random Quote</Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {!randomQuoteLoading && randomQuote && (
+              <>
+                <TouchableOpacity onPress={() => shareQuote(randomQuote)} style={{ marginRight: 12 }}>
+                  <Ionicons name="share-social-outline" size={26} color="#4a90e2" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={toggleRandomFavorite}>
+                  <Ionicons
+                    name={randomIsFavorite ? "heart" : "heart-outline"}
+                    size={28}
+                    color="#d72660"
+                  />
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
         {randomQuoteLoading ? (
           <ActivityIndicator size="large" />
         ) : randomQuote ? (
@@ -138,7 +212,16 @@ export default function Index() {
           <Text style={styles.error}>No quotes found for this category</Text>
         )}
       </View>
-    </View>
+
+      {/* Favorites Button */}
+      <TouchableOpacity
+        style={styles.favoritesNavButton}
+        onPress={() => router.push("/favorites")}
+      >
+        <Ionicons name="star" size={24} color="#f5a623" />
+        <Text style={styles.favNavText}>View Favorites</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
@@ -155,7 +238,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  sectionTitle: { fontSize: 20, fontWeight: "bold", marginBottom: 10, color: "#222" },
+  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  sectionTitle: { fontSize: 20, fontWeight: "bold", color: "#222" },
   quoteText: { fontSize: 18, fontStyle: "italic", textAlign: "center", color: "#222", marginBottom: 14 },
   authorText: { fontSize: 15, color: "#555", textAlign: "center", marginBottom: 14 },
   error: { color: "#d72660", marginBottom: 18, fontSize: 16, textAlign: "center" },
@@ -164,4 +248,17 @@ const styles = StyleSheet.create({
   picker: { flex: 1, height: 44 },
   reloadButton: { alignItems: "center", justifyContent: "center" },
   reloadLabel: { fontSize: 13, color: "#555", marginTop: 3 },
+  favoritesNavButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "center",
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    backgroundColor: "#fffbe6",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#f5a623",
+  },
+  favNavText: { marginLeft: 8, color: "#f5a623", fontWeight: "bold", fontSize: 16 },
 });
