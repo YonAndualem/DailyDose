@@ -1,0 +1,127 @@
+import React, { useRef } from "react";
+import { View, Text, StyleSheet, Dimensions, Image, TouchableOpacity, FlatList } from "react-native";
+import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFonts, Pacifico_400Regular } from "@expo-google-fonts/pacifico";
+
+// Replace these image imports with your actual local assets (SVG or PNG)
+const slides = [
+    {
+        key: "1",
+        title: "Daily Personalized Quotes",
+        description: "Automatically generate some quotes based on your mood/preference",
+        image: require("../assets/images/onboarding/onboarding1.png"),
+        button: "Next",
+    },
+    {
+        key: "2",
+        title: "Share Your Quote",
+        description: "You can write your own quote and post it for the other users to see it",
+        image: require("../assets/images/onboarding/onboarding2.png"),
+        button: "Next",
+    },
+    {
+        key: "3",
+        title: "Various Display Theme",
+        description: "Customize your app display with colors, patterns, photos or upload your own images",
+        image: require("../assets/images/onboarding/onboarding3.png"),
+        button: "Got it!",
+    },
+];
+
+const { width, height } = Dimensions.get("window");
+
+export default function OnboardingScreen() {
+    const flatListRef = useRef<FlatList>(null);
+    const router = useRouter();
+
+    let [fontsLoaded] = useFonts({ Pacifico: Pacifico_400Regular });
+
+    const handleNext = async (index: number) => {
+        if (index < slides.length - 1) {
+            flatListRef.current?.scrollToIndex({ index: index + 1 });
+        } else {
+            // Mark onboarding as seen and redirect to home
+            await AsyncStorage.setItem("hasSeenOnboarding", "true");
+            router.replace("/home");
+        }
+    };
+
+    if (!fontsLoaded) return null;
+
+    return (
+        <FlatList
+            ref={flatListRef}
+            data={slides}
+            keyExtractor={(item) => item.key}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            renderItem={({ item, index }) => (
+                <View style={styles.slide}>
+                    <Text style={[styles.logo, { fontFamily: "Pacifico" }]}>DailyDose</Text>
+                    <Image source={item.image} style={styles.image} resizeMode="contain" />
+                    <Text style={styles.title}>{item.title}</Text>
+                    <Text style={styles.description}>{item.description}</Text>
+                    <TouchableOpacity
+                        style={styles.button}
+                        onPress={() => handleNext(index)}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={styles.buttonText}>{item.button}</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+        />
+    );
+}
+
+const styles = StyleSheet.create({
+    slide: {
+        width,
+        flex: 1,
+        alignItems: "center",
+        backgroundColor: "#1C274C",
+        paddingVertical: 56,
+        paddingHorizontal: 20,
+        justifyContent: "flex-start",
+    },
+    logo: {
+        fontSize: 38,
+        color: "#fff",
+        marginBottom: 24,
+        marginTop: 12,
+        textAlign: "center",
+    },
+    image: {
+        width: width * 0.65,
+        height: height * 0.28,
+        marginBottom: 32,
+    },
+    title: {
+        fontSize: 22,
+        fontWeight: "bold",
+        color: "#fff",
+        marginBottom: 12,
+        textAlign: "center",
+    },
+    description: {
+        fontSize: 15,
+        color: "#cfd8dc",
+        textAlign: "center",
+        marginBottom: 36,
+        paddingHorizontal: 10,
+    },
+    button: {
+        backgroundColor: "#9147FF",
+        borderRadius: 25,
+        paddingVertical: 12,
+        paddingHorizontal: 32,
+        marginTop: 16,
+    },
+    buttonText: {
+        color: "#fff",
+        fontWeight: "bold",
+        fontSize: 17,
+    },
+});

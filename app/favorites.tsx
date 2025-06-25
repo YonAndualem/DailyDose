@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Share } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Share, useColorScheme } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getFavorites, removeFavorite } from "../utils/favorites";
 import { Quote } from "../utils/api";
 
 export default function FavoritesScreen() {
     const [favorites, setFavorites] = useState<Quote[]>([]);
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === "dark";
+    const styles = getStyles(isDark);
 
     const loadFavorites = async () => {
         const favs = await getFavorites();
@@ -16,7 +19,6 @@ export default function FavoritesScreen() {
         loadFavorites();
     }, []);
 
-    // Share handler
     const shareQuote = async (quote: Quote) => {
         try {
             await Share.share({
@@ -77,24 +79,24 @@ export default function FavoritesScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, padding: 16, backgroundColor: "#fff" },
-    title: { fontSize: 22, fontWeight: "bold", marginBottom: 20, textAlign: "center", color: "#f5a623" },
+const getStyles = (isDark: boolean) => StyleSheet.create({
+    container: { flex: 1, padding: 16, backgroundColor: isDark ? "#111" : "#fff" },
+    title: { fontSize: 22, fontWeight: "bold", marginBottom: 20, textAlign: "center", color: isDark ? "#ffd700" : "#f5a623" },
     empty: { textAlign: "center", color: "#aaa", fontSize: 16, marginTop: 40 },
     quoteCard: {
-        backgroundColor: "#f5f5f5",
+        backgroundColor: isDark ? "#23272e" : "#f5f5f5",
         borderRadius: 12,
         padding: 18,
         marginBottom: 18,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.07,
+        shadowOpacity: isDark ? 0.18 : 0.07,
         shadowRadius: 4,
         elevation: 2,
         position: "relative",
     },
-    quoteText: { fontSize: 16, fontStyle: "italic", color: "#333", marginBottom: 10 },
-    authorText: { fontSize: 14, color: "#555" },
+    quoteText: { fontSize: 16, fontStyle: "italic", color: isDark ? "#fff" : "#333", marginBottom: 10 },
+    authorText: { fontSize: 14, color: isDark ? "#aaa" : "#555" },
     actionsRow: {
         position: "absolute",
         top: 8,
