@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions, FlatLi
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFonts, Pacifico_400Regular } from "@expo-google-fonts/pacifico";
+import StepBirthday from "./personalize/BirthdayStep";
 
 // Example options for religion, feelings, etc.
 const religions = ["None", "Christianity", "Islam", "Judaism", "Other"];
@@ -51,6 +52,7 @@ function StepName({ value, onChange, onNext }: { value: string, onChange: (v: st
                 value={value}
                 onChangeText={onChange}
             />
+            <Text style={styles.explainingText}>Your name will be displayed in your motivational quotes.</Text>
             <TouchableOpacity style={styles.button} onPress={onNext} disabled={!value}>
                 <Text style={styles.buttonText}>Next</Text>
             </TouchableOpacity>
@@ -71,6 +73,8 @@ function StepUsername({ value, onChange, onNext, onPrev }: { value: string, onCh
                 onChangeText={onChange}
                 autoCapitalize="none"
             />
+            <Text style={styles.explainingText}>Your username will be displayed when you post something.
+            You can edit it later.</Text>
             <View style={styles.row}>
                 <TouchableOpacity style={styles.secondaryButton} onPress={onPrev}>
                     <Text style={styles.secondaryButtonText}>Back</Text>
@@ -83,30 +87,6 @@ function StepUsername({ value, onChange, onNext, onPrev }: { value: string, onCh
     );
 }
 
-function StepBirthday({ value, onChange, onNext, onPrev }: { value: string, onChange: (v: string) => void, onNext: () => void, onPrev: () => void }) {
-    return (
-        <View style={styles.stepContainer}>
-            <Text style={[styles.logo, { fontFamily: "Pacifico" }]}>DailyDose</Text>
-            <Text style={styles.label}>When is your birthday?</Text>
-            <TextInput
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor="#888"
-                style={styles.textInput}
-                value={value}
-                onChangeText={onChange}
-                keyboardType="numeric"
-            />
-            <View style={styles.row}>
-                <TouchableOpacity style={styles.secondaryButton} onPress={onPrev}>
-                    <Text style={styles.secondaryButtonText}>Back</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={onNext} disabled={!value}>
-                    <Text style={styles.buttonText}>Next</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
-}
 
 function StepReligion({ value, onChange, onNext, onPrev }: { value: string, onChange: (v: string) => void, onNext: () => void, onPrev: () => void }) {
     return (
@@ -341,6 +321,7 @@ const styles = StyleSheet.create({
         marginBottom: 22,
         borderWidth: 1,
         borderColor: "#30395c",
+        textAlign: "center",
     },
     button: {
         backgroundColor: "#9147FF",
@@ -450,6 +431,13 @@ const styles = StyleSheet.create({
     },
     welcomeText2: {
         fontSize: 16,
+        color: "#bbb",
+        marginBottom: 28,
+        textAlign: "center",
+        paddingHorizontal: 8,
+    },
+    explainingText: {
+        fontSize: 12,
         color: "#bbb",
         marginBottom: 28,
         textAlign: "center",
