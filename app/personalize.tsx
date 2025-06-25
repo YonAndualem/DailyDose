@@ -4,6 +4,8 @@ import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFonts, Pacifico_400Regular } from "@expo-google-fonts/pacifico";
 import StepBirthday from "./personalize/BirthdayStep";
+import WelcomeStep from "./personalize/WelcomeStep";
+
 
 // Example options for religion, feelings, etc.
 const religions = ["None", "Christianity", "Islam", "Judaism", "Other"];
@@ -21,24 +23,7 @@ const { width } = Dimensions.get("window");
 
 // STEP COMPONENTS
 
-function StepWelcome({ onNext }: { onNext: () => void }) {
-    return (
-        <View style={styles.stepContainer}>
-            <Text style={[styles.logo, { fontFamily: "Pacifico" }]}>DailyDose</Text>
-            <Text style={styles.welcomeTitle}>WELCOME</Text>
-            <Text style={styles.welcomeText}>
-                This is your first time here, so let's personalize your experience.
-            </Text>
-            <Text style={styles.welcomeText2}>
-                Ready to start?
-            </Text>
 
-            <TouchableOpacity style={styles.button} onPress={onNext}>
-                <Text style={styles.buttonText}>Start</Text>
-            </TouchableOpacity>
-        </View>
-    );
-}
 
 function StepName({ value, onChange, onNext }: { value: string, onChange: (v: string) => void, onNext: () => void }) {
     return (
@@ -256,7 +241,7 @@ export default function PersonalizeScreen() {
     if (!fontsLoaded) return null;
 
     const steps = [
-        <StepWelcome onNext={() => setStep(step + 1)} key={0} />,
+        <WelcomeStep onNext={() => setStep(step + 1)} key={0} />,
         <StepName value={name} onChange={setName} onNext={() => setStep(step + 1)} key={1} />,
         <StepUsername value={username} onChange={setUsername} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={2} />,
         <StepBirthday value={birthday} onChange={setBirthday} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={3} />,
