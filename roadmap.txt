@@ -5,15 +5,15 @@ This is a step-by-step plan to connect your blank React Native app to your backe
 ---
 
 ## 1. **Project Setup**
-- [ ] Ensure a blank React Native (Expo) project is ready with a clean `/app/index.tsx`.
-- [ ] Confirm project runs on device/emulator and loads a simple text screen.
+- [*] Ensure a blank React Native (Expo) project is ready with a clean `/app/index.tsx`.
+- [*] Confirm project runs on device/emulator and loads a simple text screen.
 
 ---
 
 ## 2. **API Setup**
-- [ ] Decide on and document your backend API base URL (local/production).
-- [ ] Create a `utils/api.ts` to encapsulate all backend API calls.
-- [ ] Test fetching a daily quote from `GET /api/quotes/daily`.
+- [*] Decide on and document your backend API base URL (local/production).
+- [*] Create a `utils/api.ts` to encapsulate all backend API calls.
+- [*] Test fetching a daily quote from `GET /api/quotes/daily`.
 
 ---
 

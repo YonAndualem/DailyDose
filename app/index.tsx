@@ -1,24 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Button, ActivityIndicator, Alert, StyleSheet } from "react-native";
-import { getDailyQuotes, Quote } from "../utils/api";
+import { getQuoteOfTheDay, Quote } from "../utils/api";
 
 export default function Index() {
-  const [quotes, setQuotes] = useState<Quote[] | null>(null);
+  const [quote, setQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchQuotes = async () => {
+  const fetchQuote = async () => {
     setLoading(true);
     try {
-      const data = await getDailyQuotes();
-      setQuotes(data);
+      const data = await getQuoteOfTheDay();
+      setQuote(data);
     } catch (e: any) {
-      Alert.alert("Error", e.message || "Failed to load quotes.");
+      Alert.alert("Error", e.message || "Failed to load quote.");
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    fetchQuotes();
+    fetchQuote();
   }, []);
 
   if (loading) {
@@ -29,23 +29,20 @@ export default function Index() {
     );
   }
 
-  if (!quotes || quotes.length === 0) {
+  if (!quote) {
     return (
       <View style={styles.centered}>
-        <Text>No quotes found!</Text>
-        <Button title="Try Again" onPress={fetchQuotes} />
+        <Text>No quote found!</Text>
+        <Button title="Try Again" onPress={fetchQuote} />
       </View>
     );
   }
 
-  // Display the first daily quote as an example
-  const first = quotes[0];
-
   return (
     <View style={styles.centered}>
-      <Text style={styles.quoteText}>{first.quote}</Text>
-      <Text style={styles.authorText}>— {first.author}</Text>
-      <Button title="Reload" onPress={fetchQuotes} />
+      <Text style={styles.quoteText}>{quote.quote}</Text>
+      <Text style={styles.authorText}>{quote.author}</Text>
+      <Button title="Reload" onPress={fetchQuote} />
     </View>
   );
 }
