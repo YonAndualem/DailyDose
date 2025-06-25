@@ -18,7 +18,7 @@ This is a step-by-step plan to connect your blank React Native app to your backe
 ---
 
 ## 3. **Basic Home Screen**
-- [ ] Build a basic Home screen that:
+- [*] Build a basic Home screen that:
     - [ ] Fetches and displays the daily quote from the backend.
     - [ ] Shows loading and error states.
     - [ ] Has a "Reload" button to fetch a new quote.
