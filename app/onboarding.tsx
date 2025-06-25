@@ -41,9 +41,9 @@ export default function OnboardingScreen() {
         if (index < slides.length - 1) {
             flatListRef.current?.scrollToIndex({ index: index + 1 });
         } else {
-            // Mark onboarding as seen and redirect to home
+            // Mark onboarding as seen and redirect to personalize flow
             await AsyncStorage.setItem("hasSeenOnboarding", "true");
-            router.replace("/home");
+            router.replace("/personalize");
         }
     };
 

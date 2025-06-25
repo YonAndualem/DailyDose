@@ -1,31 +1,33 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Animated, ActivityIndicator, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
-import { useFonts, Pacifico_400Regular } from "@expo-google-fonts/pacifico";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFonts, Pacifico_400Regular } from "@expo-google-fonts/pacifico";
 
 export default function Index() {
     const [showBlue, setShowBlue] = useState(false);
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const router = useRouter();
     const [fontsLoaded] = useFonts({ Pacifico: Pacifico_400Regular });
-    const [checkedOnboarding, setCheckedOnboarding] = useState(false);
+    const [checkedFlags, setCheckedFlags] = useState(false);
     const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(null);
+    const [hasCompletedPersonalize, setHasCompletedPersonalize] = useState<boolean | null>(null);
 
     const { height } = Dimensions.get("window");
 
-    // On mount, check if onboarding has been seen
     useEffect(() => {
-        AsyncStorage.getItem("hasSeenOnboarding")
-            .then(val => {
-                setHasSeenOnboarding(val === "true");
-                setCheckedOnboarding(true);
-            });
+        // Check both onboarding and personal data flags
+        (async () => {
+            const seenOnboarding = await AsyncStorage.getItem("hasSeenOnboarding");
+            const completedPersonalize = await AsyncStorage.getItem("hasCompletedPersonalize");
+            setHasSeenOnboarding(seenOnboarding === "true");
+            setHasCompletedPersonalize(completedPersonalize === "true");
+            setCheckedFlags(true);
+        })();
     }, []);
 
-    // Splash animation and redirect logic
     useEffect(() => {
-        if (!fontsLoaded || !checkedOnboarding) return;
+        if (!fontsLoaded || !checkedFlags) return;
 
         Animated.timing(fadeAnim, {
             toValue: 1,
@@ -37,15 +39,17 @@ export default function Index() {
         const timer = setTimeout(() => {
             if (!hasSeenOnboarding) {
                 router.replace("/onboarding");
+            } else if (!hasCompletedPersonalize) {
+                router.replace("/personalize");
             } else {
                 router.replace("/home");
             }
         }, 3000);
 
         return () => clearTimeout(timer);
-    }, [fontsLoaded, checkedOnboarding, hasSeenOnboarding]);
+    }, [fontsLoaded, checkedFlags, hasSeenOnboarding, hasCompletedPersonalize]);
 
-    if (!fontsLoaded || !checkedOnboarding) return null;
+    if (!fontsLoaded || !checkedFlags) return null;
 
     return (
         <View style={{ flex: 1 }}>
