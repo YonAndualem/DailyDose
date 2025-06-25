@@ -81,9 +81,10 @@ export default function StepBirthday({
                     maxLength={2}
                     placeholder="MM"
                     value={month}
-                    onChangeText={(v) =>
-                        +v > 12 ? handleChange("month", "12") : handleChange("month", v)
-                    }
+                    onChangeText={(v) => {
+                        if (+v > 12) handleChange("month", "12");
+                        else handleChange("month", v);
+                    }}
                 />
                 <Text style={styles.sep}>/</Text>
                 <TextInput
@@ -93,7 +94,10 @@ export default function StepBirthday({
                     placeholder="DD"
                     value={day}
                     onChangeText={(v) => {
-                        if (+v > daysInMonth) handleChange("day", String(daysInMonth));
+                        const daysInSelectedMonth = getDaysInMonth(
+                            year && month ? new Date(+year, +month - 1) : new Date()
+                        );
+                        if (+v > daysInSelectedMonth) handleChange("day", String(daysInSelectedMonth));
                         else handleChange("day", v);
                     }}
                 />
