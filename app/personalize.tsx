@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFonts, Pacifico_400Regular } from "@expo-google-fonts/pacifico";
 import StepBirthday from "./personalize/BirthdayStep";
 import WelcomeStep from "./personalize/WelcomeStep";
+import NameStep from "./personalize/NameStep";
 
 
 // Example options for religion, feelings, etc.
@@ -23,27 +24,6 @@ const { width } = Dimensions.get("window");
 
 // STEP COMPONENTS
 
-
-
-function StepName({ value, onChange, onNext }: { value: string, onChange: (v: string) => void, onNext: () => void }) {
-    return (
-        <View style={styles.stepContainer}>
-            <Text style={[styles.logo, { fontFamily: "Pacifico" }]}>DailyDose</Text>
-            <Text style={styles.label}>What's your name?</Text>
-            <TextInput
-                placeholder="Type your name"
-                placeholderTextColor="#888"
-                style={styles.textInput}
-                value={value}
-                onChangeText={onChange}
-            />
-            <Text style={styles.explainingText}>Your name will be displayed in your motivational quotes.</Text>
-            <TouchableOpacity style={styles.button} onPress={onNext} disabled={!value}>
-                <Text style={styles.buttonText}>Next</Text>
-            </TouchableOpacity>
-        </View>
-    );
-}
 
 function StepUsername({ value, onChange, onNext, onPrev }: { value: string, onChange: (v: string) => void, onNext: () => void, onPrev: () => void }) {
     return (
@@ -242,7 +222,7 @@ export default function PersonalizeScreen() {
 
     const steps = [
         <WelcomeStep onNext={() => setStep(step + 1)} key={0} />,
-        <StepName value={name} onChange={setName} onNext={() => setStep(step + 1)} key={1} />,
+        <NameStep value={name} onChange={setName} onNext={() => setStep(step + 1)} onPrev={step > 0 ? () => setStep(step - 1) : undefined}/>,
         <StepUsername value={username} onChange={setUsername} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={2} />,
         <StepBirthday value={birthday} onChange={setBirthday} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={3} />,
         <StepReligion value={religion} onChange={setReligion} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={4} />,
