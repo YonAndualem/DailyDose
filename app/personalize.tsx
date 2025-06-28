@@ -7,6 +7,7 @@ import StepBirthday from "./personalize/BirthdayStep";
 import WelcomeStep from "./personalize/WelcomeStep";
 import NameStep from "./personalize/NameStep";
 import UsernameStep from "./personalize/UsernameStep";
+import ReligionStep from "./personalize/ReligionStep";
 
 // Example options for religion, feelings, etc.
 const religions = ["None", "Christianity", "Islam", "Judaism", "Other"];
@@ -23,32 +24,6 @@ const frequencies = ["Daily", "Weekly", "Monthly"];
 const { width } = Dimensions.get("window");
 
 // STEP COMPONENTS
-
-function StepReligion({ value, onChange, onNext, onPrev }: { value: string, onChange: (v: string) => void, onNext: () => void, onPrev: () => void }) {
-    return (
-        <View style={styles.stepContainer}>
-            <Text style={[styles.logo, { fontFamily: "Pacifico" }]}>DailyDose</Text>
-            <Text style={styles.label}>Select your religion (optional)</Text>
-            {religions.map((r) => (
-                <TouchableOpacity
-                    key={r}
-                    style={[styles.optionButton, value === r && styles.optionButtonSelected]}
-                    onPress={() => onChange(r)}
-                >
-                    <Text style={[styles.optionText, value === r && styles.optionTextSelected]}>{r}</Text>
-                </TouchableOpacity>
-            ))}
-            <View style={styles.row}>
-                <TouchableOpacity style={styles.secondaryButton} onPress={onPrev}>
-                    <Text style={styles.secondaryButtonText}>Back</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={onNext}>
-                    <Text style={styles.buttonText}>Next</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
-}
 
 function StepMood({ value, onChange, onNext, onPrev }: { value: string, onChange: (v: string) => void, onNext: () => void, onPrev: () => void }) {
     return (
@@ -196,7 +171,7 @@ export default function PersonalizeScreen() {
         <NameStep value={name} onChange={setName} onNext={() => setStep(step + 1)} onPrev={step > 0 ? () => setStep(step - 1) : undefined} />,
         <UsernameStep value={username} onChange={setUsername} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)}/>,
         <StepBirthday value={birthday} onChange={setBirthday} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={3} />,
-        <StepReligion value={religion} onChange={setReligion} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={4} />,
+        <ReligionStep value={religion} onChange={setReligion} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={4} />,
         <StepMood value={mood} onChange={setMood} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={5} />,
         <StepLifeAspect value={lifeAspect} onChange={setLifeAspect} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={6} />,
         <StepTheme value={theme} onChange={setTheme} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={7} />,
