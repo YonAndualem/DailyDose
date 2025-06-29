@@ -11,55 +11,11 @@ import ReligionStep from "./personalize/ReligionStep";
 import MoodStep from "./personalize/MoodStep";
 import LifeAspectStep from "./personalize/LifeAspectStep";
 import ThemeStep from "./personalize/ThemeStep";
-
+import FrequencyStep from "./personalize/FrequencyStep";
 // Example options for religion, feelings, etc.
 const frequencies = ["Daily", "Weekly", "Monthly"];
 
 const { width } = Dimensions.get("window");
-
-// STEP COMPONENTS
-
-function StepFrequency({ value, onChange, onNext, onPrev }: { value: string, onChange: (v: string) => void, onNext: () => void, onPrev: () => void }) {
-    return (
-        <View style={styles.stepContainer}>
-            <Text style={[styles.logo, { fontFamily: "Pacifico" }]}>DailyDose</Text>
-            <Text style={styles.label}>How often do you want to receive quotes?</Text>
-            {frequencies.map((freq) => (
-                <TouchableOpacity
-                    key={freq}
-                    style={[styles.optionButton, value === freq && styles.optionButtonSelected]}
-                    onPress={() => onChange(freq)}
-                >
-                    <Text style={[styles.optionText, value === freq && styles.optionTextSelected]}>{freq}</Text>
-                </TouchableOpacity>
-            ))}
-            <View style={styles.row}>
-                <TouchableOpacity style={styles.secondaryButton} onPress={onPrev}>
-                    <Text style={styles.secondaryButtonText}>Back</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={onNext} disabled={!value}>
-                    <Text style={styles.buttonText}>Next</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
-}
-
-function StepSummary({ data, onFinish, onPrev }: { data: any, onFinish: () => void, onPrev: () => void }) {
-    return (
-        <View style={styles.stepContainer}>
-            <Text style={[styles.logo, { fontFamily: "Pacifico" }]}>DailyDose</Text>
-            <Text style={styles.label}>All set, {data.name || "friend"}!</Text>
-            <Text style={styles.summaryText}>Welcome to DailyDose. Embrace your journey to happiness!</Text>
-            <TouchableOpacity style={styles.button} onPress={onFinish}>
-                <Text style={styles.buttonText}>Go to Dashboard</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryButton} onPress={onPrev}>
-                <Text style={styles.secondaryButtonText}>Back</Text>
-            </TouchableOpacity>
-        </View>
-    );
-}
 
 // MAIN WIZARD COMPONENT
 
@@ -88,7 +44,7 @@ export default function PersonalizeScreen() {
         <MoodStep value={mood} onChange={setMood} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={5} />,
         <LifeAspectStep value={lifeAspect} onChange={setLifeAspect} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={6} />,
         <ThemeStep value={theme} onChange={setTheme} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={7} />,
-        <StepFrequency value={frequency} onChange={setFrequency} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={8} />,
+        <FrequencyStep value={frequency} onChange={setFrequency} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={8} />,
         <StepSummary
             data={{ name, username, birthday, religion, mood, lifeAspect, theme, frequency }}
             onFinish={async () => {
