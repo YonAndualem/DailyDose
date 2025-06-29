@@ -1,27 +1,25 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions, FlatList, Image } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFonts, Pacifico_400Regular } from "@expo-google-fonts/pacifico";
-import StepBirthday from "./personalize/BirthdayStep";
+
+// Step components (each has its own styles internally)
 import WelcomeStep from "./personalize/WelcomeStep";
 import NameStep from "./personalize/NameStep";
 import UsernameStep from "./personalize/UsernameStep";
+import StepBirthday from "./personalize/BirthdayStep";
 import ReligionStep from "./personalize/ReligionStep";
 import MoodStep from "./personalize/MoodStep";
 import LifeAspectStep from "./personalize/LifeAspectStep";
 import ThemeStep from "./personalize/ThemeStep";
 import FrequencyStep from "./personalize/FrequencyStep";
-// Example options for religion, feelings, etc.
-const frequencies = ["Daily", "Weekly", "Monthly"];
-
-const { width } = Dimensions.get("window");
-
-// MAIN WIZARD COMPONENT
+import SummaryStep from "./personalize/SummaryStep";
 
 export default function PersonalizeScreen() {
     const router = useRouter();
     const [fontsLoaded] = useFonts({ Pacifico: Pacifico_400Regular });
+
     // Wizard state
     const [step, setStep] = useState(0);
     const [name, setName] = useState("");
@@ -35,22 +33,74 @@ export default function PersonalizeScreen() {
 
     if (!fontsLoaded) return null;
 
+    // Steps array: each step is a component, passing state as needed
     const steps = [
         <WelcomeStep onNext={() => setStep(step + 1)} key={0} />,
-        <NameStep value={name} onChange={setName} onNext={() => setStep(step + 1)} onPrev={step > 0 ? () => setStep(step - 1) : undefined} />,
-        <UsernameStep value={username} onChange={setUsername} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)}/>,
-        <StepBirthday value={birthday} onChange={setBirthday} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={3} />,
-        <ReligionStep value={religion} onChange={setReligion} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={4} />,
-        <MoodStep value={mood} onChange={setMood} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={5} />,
-        <LifeAspectStep value={lifeAspect} onChange={setLifeAspect} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={6} />,
-        <ThemeStep value={theme} onChange={setTheme} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={7} />,
-        <FrequencyStep value={frequency} onChange={setFrequency} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={8} />,
-        <StepSummary
+        <NameStep
+            value={name}
+            onChange={setName}
+            onNext={() => setStep(step + 1)}
+            onPrev={step > 0 ? () => setStep(step - 1) : undefined}
+            key={1}
+        />,
+        <UsernameStep
+            value={username}
+            onChange={setUsername}
+            onNext={() => setStep(step + 1)}
+            onPrev={() => setStep(step - 1)}
+            key={2}
+        />,
+        <StepBirthday
+            value={birthday}
+            onChange={setBirthday}
+            onNext={() => setStep(step + 1)}
+            onPrev={() => setStep(step - 1)}
+            key={3}
+        />,
+        <ReligionStep
+            value={religion}
+            onChange={setReligion}
+            onNext={() => setStep(step + 1)}
+            onPrev={() => setStep(step - 1)}
+            key={4}
+        />,
+        <MoodStep
+            value={mood}
+            onChange={setMood}
+            onNext={() => setStep(step + 1)}
+            onPrev={() => setStep(step - 1)}
+            key={5}
+        />,
+        <LifeAspectStep
+            value={lifeAspect}
+            onChange={setLifeAspect}
+            onNext={() => setStep(step + 1)}
+            onPrev={() => setStep(step - 1)}
+            key={6}
+        />,
+        <ThemeStep
+            value={theme}
+            onChange={setTheme}
+            onNext={() => setStep(step + 1)}
+            onPrev={() => setStep(step - 1)}
+            key={7}
+        />,
+        <FrequencyStep
+            value={frequency}
+            onChange={setFrequency}
+            onNext={() => setStep(step + 1)}
+            onPrev={() => setStep(step - 1)}
+            key={8}
+        />,
+        <SummaryStep
             data={{ name, username, birthday, religion, mood, lifeAspect, theme, frequency }}
             onFinish={async () => {
                 // Save data and flag as done
                 await AsyncStorage.setItem("hasCompletedPersonalize", "true");
-                await AsyncStorage.setItem("userPersonalData", JSON.stringify({ name, username, birthday, religion, mood, lifeAspect, theme, frequency }));
+                await AsyncStorage.setItem(
+                    "userPersonalData",
+                    JSON.stringify({ name, username, birthday, religion, mood, lifeAspect, theme, frequency })
+                );
                 router.replace("/home");
             }}
             onPrev={() => setStep(step - 1)}
@@ -61,173 +111,13 @@ export default function PersonalizeScreen() {
     return <View style={styles.container}>{steps[step]}</View>;
 }
 
-// THEME STYLES
+// Only global container style, all step-specific styles are in component files
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#161F35", // your theme background
+        backgroundColor: "#161F35",
         justifyContent: "center",
         alignItems: "center",
         paddingHorizontal: 20,
-    },
-    stepContainer: {
-        width: "100%",
-        alignItems: "center",
-        justifyContent: "center",
-        marginVertical: 24,
-    },
-    logo: {
-        fontSize: 42,
-        color: "#fff",
-        marginBottom: 18,
-        textAlign: "center",
-        // fontFamily applied inline
-    },
-    label: {
-        color: "#fff",
-        fontSize: 20,
-        fontWeight: "600",
-        marginBottom: 14,
-        textAlign: "center",
-    },
-    textInput: {
-        width: "85%",
-        height: 48,
-        borderRadius: 12,
-        backgroundColor: "#232B45",
-        color: "#fff",
-        paddingHorizontal: 16,
-        fontSize: 17,
-        marginBottom: 22,
-        borderWidth: 1,
-        borderColor: "#30395c",
-        textAlign: "center",
-    },
-    button: {
-        backgroundColor: "#9147FF",
-        borderRadius: 25,
-        paddingVertical: 13,
-        paddingHorizontal: 36,
-        marginTop: 12,
-        alignSelf: "center",
-        minWidth: 120,
-    },
-    buttonText: {
-        color: "#fff",
-        fontWeight: "bold",
-        fontSize: 17,
-        textAlign: "center",
-    },
-    secondaryButton: {
-        backgroundColor: "#232B45",
-        borderRadius: 25,
-        paddingVertical: 13,
-        paddingHorizontal: 24,
-        marginTop: 12,
-        marginRight: 10,
-        alignSelf: "center",
-        minWidth: 80,
-        borderWidth: 1,
-        borderColor: "#30395c",
-    },
-    secondaryButtonText: {
-        color: "#aaa",
-        fontWeight: "bold",
-        fontSize: 16,
-        textAlign: "center",
-    },
-    optionButton: {
-        backgroundColor: "#232B45",
-        borderRadius: 16,
-        paddingVertical: 14,
-        paddingHorizontal: 30,
-        marginVertical: 7,
-        minWidth: 180,
-        borderWidth: 1,
-        borderColor: "#30395c",
-    },
-    optionButtonSelected: {
-        backgroundColor: "#9147FF",
-        borderColor: "#9147FF",
-    },
-    optionText: {
-        color: "#bbb",
-        fontSize: 16,
-        textAlign: "center",
-    },
-    optionTextSelected: {
-        color: "#fff",
-        fontWeight: "bold",
-    },
-    themeButton: {
-        backgroundColor: "#232B45",
-        borderRadius: 10,
-        margin: 4,
-        borderWidth: 2,
-        borderColor: "#232B45",
-        alignItems: "center",
-        width: 90,
-        height: 100,
-        justifyContent: "center",
-    },
-    themeButtonSelected: {
-        borderColor: "#9147FF",
-        backgroundColor: "#3a255b"
-    },
-    themePreview: {
-        width: 70,
-        height: 40,
-        borderRadius: 6,
-        marginBottom: 6,
-        backgroundColor: "#222",
-    },
-    themeText: {
-        color: "#bbb",
-        fontSize: 14,
-    },
-    themeTextSelected: {
-        color: "#fff",
-        fontWeight: "bold",
-    },
-    row: {
-        flexDirection: "row",
-        justifyContent: "center",
-        alignItems: "center",
-        marginTop: 12,
-    },
-    welcomeTitle: {
-        fontSize: 26,
-        color: "#fff",
-        fontWeight: "bold",
-        marginBottom: 10,
-        textAlign: "center",
-    },
-    welcomeText: {
-        fontSize: 16,
-        color: "#bbb",
-        marginBottom: 5,
-        textAlign: "center",
-        paddingHorizontal: 8,
-    },
-    welcomeText2: {
-        fontSize: 16,
-        color: "#bbb",
-        marginBottom: 28,
-        textAlign: "center",
-        paddingHorizontal: 8,
-    },
-    explainingText: {
-        fontSize: 12,
-        color: "#bbb",
-        marginBottom: 28,
-        textAlign: "center",
-        paddingHorizontal: 8,
-    },
-    summaryText: {
-        color: "#bbb",
-        fontSize: 16,
-        marginVertical: 18,
-        textAlign: "center",
-        paddingHorizontal: 10,
     },
 });
