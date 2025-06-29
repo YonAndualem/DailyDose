@@ -10,51 +10,14 @@ import UsernameStep from "./personalize/UsernameStep";
 import ReligionStep from "./personalize/ReligionStep";
 import MoodStep from "./personalize/MoodStep";
 import LifeAspectStep from "./personalize/LifeAspectStep";
-
+import ThemeStep from "./personalize/ThemeStep";
 
 // Example options for religion, feelings, etc.
-const lifeAspects = ["Self-love", "Relationships", "Career", "Health", "Spirituality"];
-const quoteThemes = [
-    { key: "dark", label: "Dark", preview: require("../assets/images/onboarding/onboarding1.png") },
-    { key: "light", label: "Light", preview: require("../assets/images/onboarding/onboarding1.png") },
-    { key: "gradient", label: "Gradient", preview: require("../assets/images/onboarding/onboarding1.png") },
-    // Add your own themes and previews here
-];
 const frequencies = ["Daily", "Weekly", "Monthly"];
 
 const { width } = Dimensions.get("window");
 
 // STEP COMPONENTS
-
-
-function StepTheme({ value, onChange, onNext, onPrev }: { value: string, onChange: (v: string) => void, onNext: () => void, onPrev: () => void }) {
-    return (
-        <View style={styles.stepContainer}>
-            <Text style={[styles.logo, { fontFamily: "Pacifico" }]}>DailyDose</Text>
-            <Text style={styles.label}>Choose your quotes main theme</Text>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-                {quoteThemes.map((theme) => (
-                    <TouchableOpacity
-                        key={theme.key}
-                        style={[styles.themeButton, value === theme.key && styles.themeButtonSelected]}
-                        onPress={() => onChange(theme.key)}
-                    >
-                        <Image source={theme.preview} style={styles.themePreview} />
-                        <Text style={[styles.themeText, value === theme.key && styles.themeTextSelected]}>{theme.label}</Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-            <View style={styles.row}>
-                <TouchableOpacity style={styles.secondaryButton} onPress={onPrev}>
-                    <Text style={styles.secondaryButtonText}>Back</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={onNext} disabled={!value}>
-                    <Text style={styles.buttonText}>Next</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
-}
 
 function StepFrequency({ value, onChange, onNext, onPrev }: { value: string, onChange: (v: string) => void, onNext: () => void, onPrev: () => void }) {
     return (
@@ -124,7 +87,7 @@ export default function PersonalizeScreen() {
         <ReligionStep value={religion} onChange={setReligion} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={4} />,
         <MoodStep value={mood} onChange={setMood} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={5} />,
         <LifeAspectStep value={lifeAspect} onChange={setLifeAspect} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={6} />,
-        <StepTheme value={theme} onChange={setTheme} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={7} />,
+        <ThemeStep value={theme} onChange={setTheme} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={7} />,
         <StepFrequency value={frequency} onChange={setFrequency} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={8} />,
         <StepSummary
             data={{ name, username, birthday, religion, mood, lifeAspect, theme, frequency }}
