@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { View, Text, ActivityIndicator, Alert, StyleSheet, TouchableOpacity, Share, Platform } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -6,7 +6,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getQuoteOfTheDay, getAllCategories, getQuoteIdsByCategory, getQuoteById, Quote } from "../utils/api";
 import { addFavorite, removeFavorite, isFavorite } from "../utils/favorites";
 import ThemeChangeModal from "./components/ThemeChangeModal";
-import { useThemeContext } from "./context/ThemeContext"; // <-- Use the theme context
+import { useThemeContext } from "./context/ThemeContext";
+import { captureRef } from "react-native-view-shot";
+import * as Sharing from "expo-sharing";
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Utility to get all user personalization data from AsyncStorage
 const getUserPersonalData = async (): Promise<{
@@ -34,6 +37,85 @@ function getHolidayGreeting(): string | null {
   if (today.getMonth() === 11 && today.getDate() === 25) return "Christmas";
   // Add more holidays as needed
   return null;
+}
+
+// The image-only card for sharing
+
+function QuoteImageCard({ quote, author, theme }: { quote: string, author: string, theme: any }) {
+  return (
+    <LinearGradient
+      colors={[theme.primary, theme.secondary, theme.card]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={{
+        width: 320,
+        borderRadius: 22,
+        paddingVertical: 30,
+        paddingHorizontal: 24,
+        alignItems: "center",
+        justifyContent: "center",
+        shadowColor: "#000",
+        shadowOpacity: 0.18,
+        shadowRadius: 14,
+        elevation: 7,
+      }}
+      collapsable={false}
+    >
+      <Text
+        style={{
+          color: "#fff",
+          fontFamily: "Pacifico",
+          fontSize: 26,
+          marginBottom: 12,
+          letterSpacing: 1,
+          textShadowColor: "rgba(0,0,0,0.18)",
+          textShadowOffset: { width: 1, height: 2 },
+          textShadowRadius: 2,
+        }}
+      >
+        DailyDose
+      </Text>
+      <Text
+        style={{
+          fontSize: 21,
+          color: "#fff",
+          fontStyle: "italic",
+          textAlign: "center",
+          marginBottom: 18,
+          textShadowColor: "rgba(0,0,0,0.12)",
+          textShadowOffset: { width: 1, height: 1 },
+          textShadowRadius: 2,
+        }}
+      >
+        "{quote}"
+      </Text>
+      <Text
+        style={{
+          fontSize: 17,
+          color: "#fff",
+          textAlign: "center",
+          marginBottom: 10,
+          fontWeight: "bold",
+          textShadowColor: "rgba(0,0,0,0.10)",
+          textShadowOffset: { width: 1, height: 1 },
+          textShadowRadius: 2,
+        }}
+      >
+        {author}
+      </Text>
+      <Text
+        style={{
+          fontSize: 10,
+          color: "#f9f9f9",
+          textAlign: "center",
+          marginTop: 10,
+          opacity: 0.9,
+        }}
+      >
+        {new Date().toLocaleDateString(undefined, { weekday: "long", day: "2-digit", month: "short", year: "numeric" })}
+      </Text>
+    </LinearGradient>
+  );
 }
 
 export default function HomeScreen() {
@@ -70,6 +152,10 @@ export default function HomeScreen() {
 
   // Holiday logic
   const [holiday, setHoliday] = useState<string | null>(null);
+
+  // Refs for sharing image cards
+  const qotdImageRef = useRef<View>(null);
+  const randomImageRef = useRef<View>(null);
 
   useEffect(() => {
     // Load all personalization data
@@ -157,6 +243,21 @@ export default function HomeScreen() {
     }
   };
 
+  // --- SHARE QUOTE AS IMAGE ---
+  const shareQuoteAsImage = async (which: "qotd" | "random") => {
+    const ref = which === "qotd" ? qotdImageRef : randomImageRef;
+    try {
+      const uri = await captureRef(ref, {
+        format: "png",
+        quality: 1,
+      });
+      await Sharing.shareAsync(uri);
+    } catch (e) {
+      Alert.alert("Error", "Could not share quote as image.");
+    }
+  };
+
+  // fallback: share as text if image sharing fails or not supported
   const shareQuote = async (quote?: Quote) => {
     if (!quote) return;
     try {
@@ -185,7 +286,7 @@ export default function HomeScreen() {
         visible={themeModal}
         onClose={() => setThemeModal(false)}
         onSelect={async (t) => {
-          setThemeType(t); // <--- Use theme context!
+          setThemeType(t);
         }}
         currentTheme={themeType}
       />
@@ -210,8 +311,9 @@ export default function HomeScreen() {
 
       {/* Two Quote Cards */}
       <View style={styles(theme).quoteCardsContainer}>
+        {/* QOTD CARD */}
         <View style={[styles(theme).quoteCard, { height: cardHeight }]}>
-          <Text style={styles(theme).cardTitle}>Quote of the day</Text>
+          {/* No section title here */}
           {qotdLoading ? (
             <ActivityIndicator size="large" color={theme.primary} />
           ) : qotd ? (
@@ -230,14 +332,20 @@ export default function HomeScreen() {
                 color={theme.primary}
               />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => shareQuote(qotd || undefined)} accessibilityLabel="Share">
+            {/* Share as image */}
+            <TouchableOpacity onPress={() => shareQuoteAsImage("qotd")} accessibilityLabel="Share as Image">
+              <MaterialCommunityIcons name="image" size={24} color={theme.primary} style={{ marginLeft: 20 }} />
+            </TouchableOpacity>
+            {/* Share as text (fallback) */}
+            <TouchableOpacity onPress={() => shareQuote(qotd || undefined)} accessibilityLabel="Share as Text">
               <Ionicons name="share-social-outline" size={24} color={theme.primary} style={{ marginLeft: 20 }} />
             </TouchableOpacity>
           </View>
         </View>
 
+        {/* RANDOM CARD */}
         <View style={[styles(theme).quoteCard, { height: cardHeight }]}>
-          <Text style={styles(theme).cardTitle}>Random</Text>
+          {/* No section title here */}
           {randomQuoteLoading ? (
             <ActivityIndicator size="large" color={theme.primary} />
           ) : randomQuote ? (
@@ -256,7 +364,12 @@ export default function HomeScreen() {
                 color={theme.primary}
               />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => shareQuote(randomQuote || undefined)} accessibilityLabel="Share">
+            {/* Share as image */}
+            <TouchableOpacity onPress={() => shareQuoteAsImage("random")} accessibilityLabel="Share as Image">
+              <MaterialCommunityIcons name="image" size={24} color={theme.primary} style={{ marginLeft: 20 }} />
+            </TouchableOpacity>
+            {/* Share as text (fallback) */}
+            <TouchableOpacity onPress={() => shareQuote(randomQuote || undefined)} accessibilityLabel="Share as Text">
               <Ionicons name="share-social-outline" size={24} color={theme.primary} style={{ marginLeft: 20 }} />
             </TouchableOpacity>
             <TouchableOpacity onPress={reloadRandomQuote} accessibilityLabel="Reload" style={{ marginLeft: 20 }}>
@@ -264,6 +377,30 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
         </View>
+      </View>
+
+      {/* --- HIDDEN IMAGE VIEWS FOR SHARING --- */}
+      <View style={{ position: "absolute", left: -9999, top: -9999 }}>
+        {/* QOTD */}
+        {qotd && (
+          <View ref={qotdImageRef} collapsable={false}>
+            <QuoteImageCard
+              quote={qotd.quote}
+              author={qotd.author}
+              theme={theme}
+            />
+          </View>
+        )}
+        {/* Random */}
+        {randomQuote && (
+          <View ref={randomImageRef} collapsable={false}>
+            <QuoteImageCard
+              quote={randomQuote.quote}
+              author={randomQuote.author}
+              theme={theme}
+            />
+          </View>
+        )}
       </View>
 
       {/* Bottom Navigation */}

@@ -8,6 +8,10 @@
     "scheme": "dailydose",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "notification": {
+      "icon": "./assets/images/notification-icon.png",
+      "color": "#FF8800"
+    },
     "ios": {
       "supportsTablet": true
     },
