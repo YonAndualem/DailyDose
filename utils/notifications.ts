@@ -27,8 +27,8 @@ export async function scheduleDailyQuoteNotification() {
 
     await Notifications.scheduleNotificationAsync({
         content: {
-            title: "Your DailyDose Quote",
-            body: `"${quote}"\n- ${author}`,
+            title: "DailyDose Today",
+            body: `"${quote}"\n ${author}`,
             data: { type: "daily-quote" },
         },
         trigger: {
