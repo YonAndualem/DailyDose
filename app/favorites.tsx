@@ -1,14 +1,93 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Share, Platform, Modal, Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { getFavorites, removeFavorite } from "../utils/favorites";
 import { Quote } from "../utils/api";
 import ThemeChangeModal from "./components/ThemeChangeModal";
-import { useThemeContext } from "../app/context/ThemeContext"; // <-- Import the context
-
-// Utility to load personalization data (optional, not needed for theme if using context)
+import { useThemeContext } from "../app/context/ThemeContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { captureRef } from "react-native-view-shot";
+import * as Sharing from "expo-sharing";
+import { LinearGradient } from "expo-linear-gradient";
+
+// Card to render for sharing as image
+function QuoteImageCard({ quote, author, theme }: { quote: string, author: string, theme: any }) {
+    return (
+        <LinearGradient
+            colors={[theme.primary, theme.secondary, theme.card]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+                width: 320,
+                borderRadius: 22,
+                paddingVertical: 30,
+                paddingHorizontal: 24,
+                alignItems: "center",
+                justifyContent: "center",
+                shadowColor: "#000",
+                shadowOpacity: 0.18,
+                shadowRadius: 14,
+                elevation: 7,
+            }}
+            collapsable={false}
+        >
+            <Text
+                style={{
+                    color: "#fff",
+                    fontFamily: "Pacifico",
+                    fontSize: 26,
+                    marginBottom: 12,
+                    letterSpacing: 1,
+                    textShadowColor: "rgba(0,0,0,0.18)",
+                    textShadowOffset: { width: 1, height: 2 },
+                    textShadowRadius: 2,
+                }}
+            >
+                DailyDose
+            </Text>
+            <Text
+                style={{
+                    fontSize: 21,
+                    color: "#fff",
+                    fontStyle: "italic",
+                    textAlign: "center",
+                    marginBottom: 18,
+                    textShadowColor: "rgba(0,0,0,0.12)",
+                    textShadowOffset: { width: 1, height: 1 },
+                    textShadowRadius: 2,
+                }}
+            >
+                "{quote}"
+            </Text>
+            <Text
+                style={{
+                    fontSize: 17,
+                    color: "#fff",
+                    textAlign: "center",
+                    marginBottom: 10,
+                    fontWeight: "bold",
+                    textShadowColor: "rgba(0,0,0,0.10)",
+                    textShadowOffset: { width: 1, height: 1 },
+                    textShadowRadius: 2,
+                }}
+            >
+                {author}
+            </Text>
+            <Text
+                style={{
+                    fontSize: 10,
+                    color: "#f9f9f9",
+                    textAlign: "center",
+                    marginTop: 10,
+                    opacity: 0.9,
+                }}
+            >
+                {new Date().toLocaleDateString(undefined, { weekday: "long", day: "2-digit", month: "short", year: "numeric" })}
+            </Text>
+        </LinearGradient>
+    );
+}
 
 export default function FavoritesScreen() {
     const router = useRouter();
@@ -22,6 +101,9 @@ export default function FavoritesScreen() {
     // Remove modal state
     const [removeModal, setRemoveModal] = useState(false);
     const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null);
+
+    // Refs for sharing image cards, one per quote id
+    const imageRefs = useRef<{ [id: number]: View | null }>({});
 
     useEffect(() => {
         loadFavorites();
@@ -39,6 +121,20 @@ export default function FavoritesScreen() {
             });
         } catch (error) {
             Alert.alert("Error", "Could not open share dialog.");
+        }
+    };
+
+    const shareQuoteAsImage = async (quote: Quote) => {
+        try {
+            const ref = imageRefs.current[quote.id];
+            if (!ref) throw new Error("Image ref not found.");
+            const uri = await captureRef(ref, {
+                format: "png",
+                quality: 1,
+            });
+            await Sharing.shareAsync(uri);
+        } catch (error) {
+            Alert.alert("Error", "Could not share quote as image.");
         }
     };
 
@@ -126,6 +222,13 @@ export default function FavoritesScreen() {
                                     <Ionicons name="share-social-outline" size={24} color={theme.primary} />
                                 </TouchableOpacity>
                                 <TouchableOpacity
+                                    onPress={() => shareQuoteAsImage(item)}
+                                    accessibilityLabel="Share as image"
+                                    style={{ marginRight: 20 }}
+                                >
+                                    <MaterialCommunityIcons name="image" size={24} color={theme.primary} />
+                                </TouchableOpacity>
+                                <TouchableOpacity
                                     onPress={() => {
                                         setPendingRemoveId(item.id);
                                         setRemoveModal(true);
@@ -134,6 +237,16 @@ export default function FavoritesScreen() {
                                 >
                                     <Ionicons name="trash-outline" size={24} color="#d72660" />
                                 </TouchableOpacity>
+                            </View>
+                            {/* Hidden view for image sharing */}
+                            <View
+                                ref={ref => {
+                                    imageRefs.current[item.id] = ref;
+                                }}
+                                collapsable={false}
+                                style={{ position: "absolute", left: -9999, top: -9999 }}
+                            >
+                                <QuoteImageCard quote={item.quote} author={item.author} theme={theme} />
                             </View>
                         </View>
                     )}
