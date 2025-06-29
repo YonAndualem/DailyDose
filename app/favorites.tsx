@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { getFavorites, removeFavorite } from "../utils/favorites";
 import { Quote } from "../utils/api";
 import ThemeChangeModal from "./components/ThemeChangeModal";
-import { useThemeContext } from "./context/ThemeContext"; // <-- Import the context
+import { useThemeContext } from "../app/context/ThemeContext"; // <-- Import the context
 
 // Utility to load personalization data (optional, not needed for theme if using context)
 import AsyncStorage from "@react-native-async-storage/async-storage";

@@ -230,7 +230,7 @@ export default function HomeScreen() {
                 color={theme.primary}
               />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => shareQuote(qotd)} accessibilityLabel="Share">
+            <TouchableOpacity onPress={() => shareQuote(qotd || undefined)} accessibilityLabel="Share">
               <Ionicons name="share-social-outline" size={24} color={theme.primary} style={{ marginLeft: 20 }} />
             </TouchableOpacity>
           </View>
@@ -256,7 +256,7 @@ export default function HomeScreen() {
                 color={theme.primary}
               />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => shareQuote(randomQuote)} accessibilityLabel="Share">
+            <TouchableOpacity onPress={() => shareQuote(randomQuote || undefined)} accessibilityLabel="Share">
               <Ionicons name="share-social-outline" size={24} color={theme.primary} style={{ marginLeft: 20 }} />
             </TouchableOpacity>
             <TouchableOpacity onPress={reloadRandomQuote} accessibilityLabel="Reload" style={{ marginLeft: 20 }}>
