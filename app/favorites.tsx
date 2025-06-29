@@ -106,7 +106,6 @@ export default function FavoritesScreen() {
                 </TouchableOpacity>
             </View>
 
-            <Text style={styles(theme).title}>Your Favorite Quotes</Text>
             {favorites.length === 0 ? (
                 <Text style={styles(theme).empty}>No favorites yet!</Text>
             ) : (

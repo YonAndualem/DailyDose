@@ -176,7 +176,7 @@ export default function HomeScreen() {
   ];
 
   // Equal height for both cards
-  const cardHeight = 210;
+  const cardHeight = 270;
 
   return (
     <View style={styles(theme).mainContainer}>
@@ -288,7 +288,7 @@ const styles = (theme: ReturnType<typeof import("./personalize/theme").getTheme>
       alignItems: "center",
       paddingTop: Platform.OS === "ios" ? 60 : 30,
       paddingHorizontal: 18,
-      marginBottom: 8,
+      marginBottom: 5,
     },
     logo: { fontSize: 32, letterSpacing: 0.5, textAlign: "center" },
     date: {
@@ -313,7 +313,7 @@ const styles = (theme: ReturnType<typeof import("./personalize/theme").getTheme>
       flex: 1,
       width: "100%",
       gap: 16,
-      marginTop: 8,
+      marginTop: 0,
       marginBottom: 72,
     },
     quoteCard: {
