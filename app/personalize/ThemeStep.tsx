@@ -3,9 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 
 // Example theme previews, adjust paths as needed for your project
 const quoteThemes = [
-    { key: "dark", label: "Dark", preview: require("../../assets/images/onboarding/onboarding1.png") },
-    { key: "light", label: "Light", preview: require("../../assets/images/onboarding/onboarding1.png") },
-    { key: "gradient", label: "Gradient", preview: require("../../assets/images/onboarding/onboarding1.png") },
+    { key: "dark", label: "Dark", preview: require("../../assets/images/theme/moon.png") },
+    { key: "light", label: "Light", preview: require("../../assets/images/theme/sun.png") },
     // Add your own themes and previews here
 ];
 
@@ -66,7 +65,7 @@ const styles = StyleSheet.create({
         marginVertical: 24,
     },
     logo: {
-        fontSize: 32,
+        fontSize: 48,
         color: "#fff",
         marginBottom: 18,
         textAlign: "center",
@@ -100,9 +99,9 @@ const styles = StyleSheet.create({
         backgroundColor: "#3a255b",
     },
     themePreview: {
-        width: 70,
-        height: 40,
-        borderRadius: 6,
+        width: 60,
+        height: 60,
+        borderRadius: 45,
         marginBottom: 6,
         backgroundColor: "#222",
     },

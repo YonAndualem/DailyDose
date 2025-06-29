@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
         marginVertical: 24,
     },
     logo: {
-        fontSize: 32,
+        fontSize: 48,
         color: "#fff",
         marginBottom: 18,
         textAlign: "center",
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
         marginBottom: 22,
         borderWidth: 1,
         borderColor: "#30395c",
-        textAlign: "left",
+        textAlign: "center",
     },
     row: {
         flexDirection: "row",

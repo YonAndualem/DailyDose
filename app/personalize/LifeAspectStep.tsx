@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
         marginVertical: 24,
     },
     logo: {
-        fontSize: 32,
+        fontSize: 48,
         color: "#fff",
         marginBottom: 18,
         textAlign: "center",
