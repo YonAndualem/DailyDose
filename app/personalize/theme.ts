@@ -18,7 +18,7 @@ export const themes = {
         optionSelectedBg: "#9147FF",
         optionText: "#bbb",
         optionSelectedText: "#fff",
-        gradientColors: ["#232B45", "#161F35"], // fallback for gradient
+        gradientColors: ["#232B45", "#161F35"],
     },
     light: {
         background: "#f8f8ff",
@@ -35,7 +35,7 @@ export const themes = {
         optionSelectedBg: "#9147FF",
         optionText: "#666",
         optionSelectedText: "#fff",
-        gradientColors: ["#fff", "#f8f8ff"], // fallback for gradient
+        gradientColors: ["#fff", "#f8f8ff"],
     },
     gradient: {
         background: "linear-gradient(135deg, #9147FF 0%, #232B45 100%)",
@@ -60,21 +60,6 @@ export function getTheme(theme: ThemeType) {
     return themes[theme];
 }
 
-/**
- * Example usage in a component:
- * 
- * import { getTheme, ThemeType } from "./theme";
- * 
- * const theme = getTheme(currentTheme as ThemeType);
- * <View style={{ backgroundColor: theme.background }}>
- *   <Text style={{ color: theme.text }}>Hello!</Text>
- * </View>
- */
-
-/**
- * Utility style generator for common UI components.
- * Pass the current theme object to get styles.
- */
 export function makeStyles(theme: typeof themes.dark | typeof themes.light | typeof themes.gradient) {
     return StyleSheet.create({
         container: {
@@ -169,3 +154,10 @@ export function makeStyles(theme: typeof themes.dark | typeof themes.light | typ
         },
     });
 }
+
+// Default export for compatibility with Expo Router/Next.js
+export default {
+    getTheme,
+    makeStyles,
+    themes,
+};

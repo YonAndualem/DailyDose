@@ -1,26 +1,51 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator, Alert, StyleSheet, TouchableOpacity, ScrollView, Share, useColorScheme } from "react-native";
-import { getQuoteOfTheDay, getAllCategories, getQuoteIdsByCategory, getQuoteById, Quote } from "../utils/api";
-import { Ionicons } from "@expo/vector-icons";
-import { Picker } from "@react-native-picker/picker";
-import { addFavorite, removeFavorite, isFavorite } from "../utils/favorites";
+import { View, Text, ActivityIndicator, Alert, StyleSheet, TouchableOpacity, Share, Platform } from "react-native";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Button } from "react-native";
+import { getQuoteOfTheDay, getAllCategories, getQuoteIdsByCategory, getQuoteById, Quote } from "../utils/api";
+import { addFavorite, removeFavorite, isFavorite } from "../utils/favorites";
+import ThemeChangeModal from "./components/ThemeChangeModal";
+import { useThemeContext } from "./context/ThemeContext"; // <-- Use the theme context
 
-export default function Index() {
+// Utility to get all user personalization data from AsyncStorage
+const getUserPersonalData = async (): Promise<{
+  name?: string;
+  username?: string;
+  birthday?: string;
+  religion?: string;
+  mood?: string;
+  lifeAspect?: string;
+  theme?: string;
+  frequency?: string;
+} | null> => {
+  const raw = await AsyncStorage.getItem("userPersonalData");
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+// Utility: Check if today is a public holiday (mock, replace with real logic/api as needed)
+function getHolidayGreeting(): string | null {
+  const today = new Date();
+  if (today.getMonth() === 11 && today.getDate() === 25) return "Christmas";
+  // Add more holidays as needed
+  return null;
+}
+
+export default function HomeScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+
+  // ---- THEME CONTEXT ----
+  const { themeType, setThemeType, theme } = useThemeContext();
 
   // QOTD state
   const [qotd, setQotd] = useState<Quote | null>(null);
   const [qotdLoading, setQotdLoading] = useState(true);
   const [qotdIsFavorite, setQotdIsFavorite] = useState(false);
-
-  // Categories state
-  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
 
   // Random quote state
   const [randomQuote, setRandomQuote] = useState<Quote | null>(null);
@@ -28,7 +53,32 @@ export default function Index() {
   const [availableIds, setAvailableIds] = useState<number[]>([]);
   const [randomIsFavorite, setRandomIsFavorite] = useState(false);
 
-  // QOTD fetch
+  // Modal
+  const [themeModal, setThemeModal] = useState(false);
+
+  // Personalization data from async storage
+  const [personalData, setPersonalData] = useState<{
+    name?: string;
+    username?: string;
+    birthday?: string;
+    religion?: string;
+    mood?: string;
+    lifeAspect?: string;
+    theme?: string;
+    frequency?: string;
+  } | null>(null);
+
+  // Holiday logic
+  const [holiday, setHoliday] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Load all personalization data
+    getUserPersonalData().then(data => {
+      setPersonalData(data);
+    });
+    setHoliday(getHolidayGreeting());
+  }, []);
+
   useEffect(() => {
     const fetchQotd = async () => {
       setQotdLoading(true);
@@ -44,25 +94,16 @@ export default function Index() {
     fetchQotd();
   }, []);
 
-  // Categories fetch
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const cats = await getAllCategories();
-        setCategories(cats);
-      } catch (e: any) {
-        Alert.alert("Error", e.message || "Failed to load categories.");
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  // Effect: Load quote ids for current category
-  useEffect(() => {
-    const fetchQuoteIds = async () => {
+    const fetchRandomQuote = async () => {
       setRandomQuoteLoading(true);
       try {
-        const ids = await getQuoteIdsByCategory(selectedCategory);
+        // Get all categories
+        const cats = await getAllCategories();
+        // Filter out empty categories just in case
+        const category = cats.length > 0 ? cats[Math.floor(Math.random() * cats.length)].name : "";
+        // Get random quote id from category
+        const ids = await getQuoteIdsByCategory(category);
         setAvailableIds(ids);
         if (ids.length > 0) {
           const id = ids[Math.floor(Math.random() * ids.length)];
@@ -73,15 +114,15 @@ export default function Index() {
           setRandomQuote(null);
           setRandomIsFavorite(false);
         }
-      } catch (e: any) {
-        Alert.alert("Error", e.message || "Failed to load random quote.");
+      } catch {
+        setRandomQuote(null);
+        setRandomIsFavorite(false);
       }
       setRandomQuoteLoading(false);
     };
-    fetchQuoteIds();
-  }, [selectedCategory]);
+    fetchRandomQuote();
+  }, []);
 
-  // Reload random quote
   const reloadRandomQuote = async () => {
     if (availableIds.length === 0) return;
     setRandomQuoteLoading(true);
@@ -90,13 +131,10 @@ export default function Index() {
       const data = await getQuoteById(id);
       setRandomQuote(data);
       setRandomIsFavorite(await isFavorite(data.id));
-    } catch (e: any) {
-      Alert.alert("Error", e.message || "Failed to load random quote.");
-    }
+    } catch { }
     setRandomQuoteLoading(false);
   };
 
-  // Toggle favorite for QOTD
   const toggleQotdFavorite = async () => {
     if (!qotd) return;
     if (qotdIsFavorite) {
@@ -108,7 +146,6 @@ export default function Index() {
     }
   };
 
-  // Toggle favorite for Random Quote
   const toggleRandomFavorite = async () => {
     if (!randomQuote) return;
     if (randomIsFavorite) {
@@ -126,192 +163,212 @@ export default function Index() {
       await Share.share({
         message: `"${quote.quote}" — ${quote.author}`,
       });
-    } catch (error) {
-      Alert.alert("Error", "Could not open share dialog.");
-    }
+    } catch { }
   };
 
-  const styles = getStyles(isDark);
+  const dateStr = new Date().toLocaleDateString(undefined, { weekday: "long", day: "2-digit", month: "short", year: "numeric" });
+
+  // NAV (favorites button at the end)
+  const navIcons = [
+    { name: "settings", icon: <Ionicons name="settings-outline" size={26} color={theme.primary} />, onPress: () => router.push("/settings") },
+    { name: "home", icon: <Ionicons name="home" size={32} color={theme.primary} />, onPress: () => { } },
+    { name: "favorites", icon: <Ionicons name="star-outline" size={26} color={theme.primary} />, onPress: () => router.push("/favorites") },
+  ];
+
+  // Equal height for both cards
+  const cardHeight = 210;
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Card 1: Quote of the Day */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.sectionTitle}>Quote of the Day</Text>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            {!qotdLoading && qotd && (
-              <>
-                <TouchableOpacity onPress={() => shareQuote(qotd)} style={{ marginRight: 12 }}>
-                  <Ionicons name="share-social-outline" size={26} color="#4a90e2" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={toggleQotdFavorite}>
-                  <Ionicons
-                    name={qotdIsFavorite ? "heart" : "heart-outline"}
-                    size={28}
-                    color="#d72660"
-                  />
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        </View>
-        {qotdLoading ? (
-          <ActivityIndicator size="large" />
-        ) : qotd ? (
-          <>
-            <Text style={styles.quoteText}>"{qotd.quote}"</Text>
-            <Text style={styles.authorText}>— {qotd.author}</Text>
-          </>
-        ) : (
-          <Text style={styles.error}>Could not load QOTD</Text>
-        )}
-      </View>
-
-      {/* Category Picker */}
-      <View style={styles.pickerWrapper}>
-        <Text style={styles.pickerLabel}>Category:</Text>
-        <Picker
-          selectedValue={selectedCategory}
-          style={styles.picker}
-          onValueChange={setSelectedCategory}
-        >
-          <Picker.Item label="All" value="" />
-          {categories.map((cat) => (
-            <Picker.Item key={cat.id} label={cat.name} value={cat.name} />
-          ))}
-        </Picker>
-      </View>
-     
-
-      <Button
-        title="Reset Onboarding"
-        onPress={async () => {
-          await AsyncStorage.removeItem("hasSeenOnboarding");
-          alert("Onboarding flag cleared! Restart the app.");
+    <View style={styles(theme).mainContainer}>
+      {/* Theme Modal */}
+      <ThemeChangeModal
+        visible={themeModal}
+        onClose={() => setThemeModal(false)}
+        onSelect={async (t) => {
+          setThemeType(t); // <--- Use theme context!
         }}
+        currentTheme={themeType}
       />
-      {/* Card 2: Random Quote */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.sectionTitle}>Random Quote</Text>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            {!randomQuoteLoading && randomQuote && (
-              <>
-                <TouchableOpacity onPress={() => shareQuote(randomQuote)} style={{ marginRight: 12 }}>
-                  <Ionicons name="share-social-outline" size={26} color="#4a90e2" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={toggleRandomFavorite}>
-                  <Ionicons
-                    name={randomIsFavorite ? "heart" : "heart-outline"}
-                    size={28}
-                    color="#d72660"
-                  />
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        </View>
-        {randomQuoteLoading ? (
-          <ActivityIndicator size="large" />
-        ) : randomQuote ? (
-          <>
-            <Text style={styles.quoteText}>"{randomQuote.quote}"</Text>
-            <Text style={styles.authorText}>— {randomQuote.author}</Text>
-            <TouchableOpacity style={styles.reloadButton} onPress={reloadRandomQuote}>
-              <Ionicons name="refresh" size={24} color="#222" />
-              <Text style={styles.reloadLabel}>Reload</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <Text style={styles.error}>No quotes found for this category</Text>
-        )}
+
+      {/* Header */}
+      <View style={styles(theme).header}>
+        <TouchableOpacity onPress={() => router.push("/profile")} accessibilityLabel="Profile">
+          <Ionicons name="person-circle-outline" size={34} color={theme.text} />
+        </TouchableOpacity>
+        <Text style={[styles(theme).logo, { color: theme.text, fontFamily: "Pacifico" }]}>DailyDose</Text>
+        <TouchableOpacity onPress={() => setThemeModal(true)} accessibilityLabel="Change Theme">
+          <Ionicons name="color-palette-outline" size={28} color={theme.text} />
+        </TouchableOpacity>
       </View>
 
-      {/* Favorites Button */}
-      <TouchableOpacity
-        style={styles.favoritesNavButton}
-        onPress={() => router.push("/favorites")}
-      >
-        <Ionicons name="star" size={24} color="#f5a623" />
-        <Text style={styles.favNavText}>View Favorites</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      {/* Date and Greeting */}
+      <Text style={styles(theme).date}>{dateStr}</Text>
+      {holiday && <Text style={styles(theme).greeting}>Happy {holiday}!</Text>}
+      {!holiday && <Text style={styles(theme).greeting}>
+        {personalData?.name ? `Hi ${personalData.name}!` : "Hi!"}
+      </Text>}
+
+      {/* Two Quote Cards */}
+      <View style={styles(theme).quoteCardsContainer}>
+        <View style={[styles(theme).quoteCard, { height: cardHeight }]}>
+          <Text style={styles(theme).cardTitle}>Quote of the day</Text>
+          {qotdLoading ? (
+            <ActivityIndicator size="large" color={theme.primary} />
+          ) : qotd ? (
+            <>
+              <Text style={styles(theme).quoteText}>"{qotd.quote}"</Text>
+              <Text style={styles(theme).authorText}>{qotd.author}</Text>
+            </>
+          ) : (
+            <Text style={styles(theme).quoteText}>Could not load QOTD</Text>
+          )}
+          <View style={styles(theme).cardActions}>
+            <TouchableOpacity onPress={toggleQotdFavorite} accessibilityLabel="Favorite">
+              <Ionicons
+                name={qotdIsFavorite ? "bookmark" : "bookmark-outline"}
+                size={24}
+                color={theme.primary}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => shareQuote(qotd)} accessibilityLabel="Share">
+              <Ionicons name="share-social-outline" size={24} color={theme.primary} style={{ marginLeft: 20 }} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={[styles(theme).quoteCard, { height: cardHeight }]}>
+          <Text style={styles(theme).cardTitle}>Random</Text>
+          {randomQuoteLoading ? (
+            <ActivityIndicator size="large" color={theme.primary} />
+          ) : randomQuote ? (
+            <>
+              <Text style={styles(theme).quoteText}>"{randomQuote.quote}"</Text>
+              <Text style={styles(theme).authorText}>{randomQuote.author}</Text>
+            </>
+          ) : (
+            <Text style={styles(theme).quoteText}>No quotes found</Text>
+          )}
+          <View style={styles(theme).cardActions}>
+            <TouchableOpacity onPress={toggleRandomFavorite} accessibilityLabel="Favorite">
+              <Ionicons
+                name={randomIsFavorite ? "bookmark" : "bookmark-outline"}
+                size={24}
+                color={theme.primary}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => shareQuote(randomQuote)} accessibilityLabel="Share">
+              <Ionicons name="share-social-outline" size={24} color={theme.primary} style={{ marginLeft: 20 }} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={reloadRandomQuote} accessibilityLabel="Reload" style={{ marginLeft: 20 }}>
+              <MaterialCommunityIcons name="reload" size={24} color={theme.primary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+
+      {/* Bottom Navigation */}
+      <View style={[styles(theme).navBar, { backgroundColor: theme.background }]}>
+        {navIcons.map((item, idx) => (
+          <TouchableOpacity key={item.name} style={styles(theme).navIcon} onPress={item.onPress}>
+            {item.icon}
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 16, paddingVertical: 32, backgroundColor: "#fff" },
-  card: {
-    backgroundColor: "#f5f5f5",
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 32,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  sectionTitle: { fontSize: 20, fontWeight: "bold", color: "#222" },
-  quoteText: { fontSize: 18, fontStyle: "italic", textAlign: "center", color: "#222", marginBottom: 14 },
-  authorText: { fontSize: 15, color: "#555", textAlign: "center", marginBottom: 14 },
-  error: { color: "#d72660", marginBottom: 18, fontSize: 16, textAlign: "center" },
-  pickerWrapper: { flexDirection: "row", alignItems: "center", marginBottom: 10, paddingHorizontal: 10 },
-  pickerLabel: { fontSize: 16, marginRight: 10, color: "#222" },
-  picker: { flex: 1, height: 44 },
-  reloadButton: { alignItems: "center", justifyContent: "center" },
-  reloadLabel: { fontSize: 13, color: "#555", marginTop: 3 },
-  favoritesNavButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "center",
-    marginTop: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    backgroundColor: "#fffbe6",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#f5a623",
-  },
-  favNavText: { marginLeft: 8, color: "#f5a623", fontWeight: "bold", fontSize: 16 },
-});
-
-const getStyles = (isDark: boolean) => StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 16, paddingVertical: 32, backgroundColor: isDark ? "#111" : "#fff" },
-  card: {
-    backgroundColor: isDark ? "#23272e" : "#f5f5f5",
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 32,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: isDark ? 0.18 : 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  sectionTitle: { fontSize: 20, fontWeight: "bold", color: isDark ? "#ffd700" : "#222" },
-  quoteText: { fontSize: 18, fontStyle: "italic", textAlign: "center", color: isDark ? "#fff" : "#222", marginBottom: 14 },
-  authorText: { fontSize: 15, color: isDark ? "#aaa" : "#555", textAlign: "center", marginBottom: 14 },
-  error: { color: "#d72660", marginBottom: 18, fontSize: 16, textAlign: "center" },
-  pickerWrapper: { flexDirection: "row", alignItems: "center", marginBottom: 10, paddingHorizontal: 10 },
-  pickerLabel: { fontSize: 16, marginRight: 10, color: isDark ? "#ffd700" : "#222" },
-  picker: { flex: 1, height: 44, color: isDark ? "#fff" : "#222", backgroundColor: isDark ? "#23272e" : "#fff" },
-  reloadButton: { alignItems: "center", justifyContent: "center" },
-  reloadLabel: { fontSize: 13, color: isDark ? "#aaa" : "#555", marginTop: 3 },
-  favoritesNavButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "center",
-    marginTop: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    backgroundColor: isDark ? "#222" : "#fffbe6",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#f5a623",
-  },
-  favNavText: { marginLeft: 8, color: "#f5a623", fontWeight: "bold", fontSize: 16 },
-});
+const styles = (theme: ReturnType<typeof import("./personalize/theme").getTheme>) =>
+  StyleSheet.create({
+    mainContainer: { flex: 1, backgroundColor: theme.background, alignItems: "center", justifyContent: "flex-start" },
+    header: {
+      width: "100%",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingTop: Platform.OS === "ios" ? 60 : 30,
+      paddingHorizontal: 18,
+      marginBottom: 8,
+    },
+    logo: { fontSize: 32, letterSpacing: 0.5, textAlign: "center" },
+    date: {
+      fontSize: 15,
+      color: theme.text,
+      fontWeight: "bold",
+      textAlign: "center",
+      marginTop: 2,
+      marginBottom: 0,
+    },
+    greeting: {
+      fontSize: 13,
+      color: theme.textSecondary,
+      textAlign: "center",
+      marginBottom: 14,
+      marginTop: 2,
+    },
+    quoteCardsContainer: {
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      flex: 1,
+      width: "100%",
+      gap: 16,
+      marginTop: 8,
+      marginBottom: 72,
+    },
+    quoteCard: {
+      width: "87%",
+      backgroundColor: theme.card,
+      borderRadius: 22,
+      paddingVertical: 22,
+      paddingHorizontal: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.05,
+      shadowRadius: 12,
+      elevation: 1,
+      minHeight: 150,
+      marginVertical: 2,
+    },
+    cardTitle: {
+      fontSize: 15,
+      color: theme.textSecondary,
+      marginBottom: 10,
+      fontWeight: "400",
+    },
+    quoteText: {
+      fontSize: 17,
+      color: theme.text,
+      fontStyle: "italic",
+      textAlign: "center",
+      marginBottom: 12,
+    },
+    authorText: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      textAlign: "center",
+      marginBottom: 12,
+    },
+    cardActions: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 20,
+      marginTop: 4,
+    },
+    navBar: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      alignItems: "center",
+      height: 64,
+      borderTopWidth: 1,
+      borderColor: theme.secondary,
+      width: "100%",
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      backgroundColor: theme.background,
+    },
+    navIcon: { flex: 1, alignItems: "center", justifyContent: "center" },
+  });
