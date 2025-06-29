@@ -14,6 +14,7 @@ import { Ionicons, Feather, AntDesign, FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useThemeContext } from "./context/ThemeContext";
+import { scheduleDailyQuoteNotification, cancelDailyQuoteNotification } from "../utils/notifications";
 
 const SETTINGS_KEYS = {
     notifications: "userNotifications",
@@ -37,6 +38,17 @@ export default function SettingsScreen() {
         })();
     }, []);
 
+    useEffect(() => {
+        // When dailyQuoteEnabled changes, schedule or cancel notifications
+        (async () => {
+            if (dailyQuoteEnabled) {
+                await scheduleDailyQuoteNotification();
+            } else {
+                await cancelDailyQuoteNotification();
+            }
+        })();
+    }, [dailyQuoteEnabled]);
+
     const handleToggleNotifications = async (value: boolean) => {
         setNotificationsEnabled(value);
         await AsyncStorage.setItem(SETTINGS_KEYS.notifications, value.toString());
@@ -45,6 +57,7 @@ export default function SettingsScreen() {
     const handleToggleDailyQuote = async (value: boolean) => {
         setDailyQuoteEnabled(value);
         await AsyncStorage.setItem(SETTINGS_KEYS.dailyQuote, value.toString());
+        // The useEffect above will handle scheduling/cancelling the notification
     };
 
     const handleThemeChange = () => {
@@ -139,7 +152,7 @@ export default function SettingsScreen() {
                         Version <Text style={{ fontWeight: "bold" }}>1.0.0</Text>
                     </Text>
                     <Text style={styles(theme).aboutText}>
-                        Made with <Ionicons name="heart" size={14} color={theme.primary} /> by YonAndualem
+                        Made by YonAndualem
                     </Text>
                     <Text style={styles(theme).aboutText}>
                         © {new Date().getFullYear()} DailyDose
@@ -157,7 +170,6 @@ export default function SettingsScreen() {
                 <View style={styles(theme).modalOverlay}>
                     <View style={[
                         styles(theme).modalBox,
-                        // Example: purple background for dark mode
                         themeType === "dark" && { backgroundColor: theme.primary }
                     ]}>
                         <Text style={[
@@ -280,7 +292,7 @@ const settingRowStyles = StyleSheet.create({
     },
 });
 
-const styles = (theme: ReturnType<typeof import("./personalize/theme").getTheme>) =>
+const styles = (theme: any) =>
     StyleSheet.create({
         mainContainer: {
             flex: 1,

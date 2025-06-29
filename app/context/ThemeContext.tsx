@@ -42,3 +42,5 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 export function useThemeContext() {
     return useContext(ThemeContext);
 }
+
+export default ThemeProvider;
