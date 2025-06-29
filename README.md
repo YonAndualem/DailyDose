@@ -1,90 +1,154 @@
 # DailyDose
 
-A simple React Native app that brings you daily motivational quotes. Reload for new inspiration, share your favorites, and keep track of the quotes that move you—all with a clean, beginner-friendly design.
+**DailyDose** is a motivational quote app built with [Expo](https://expo.dev/) and React Native. It delivers an inspiring quote every day, allows users to browse and save their favorite quotes, and sends daily notifications with a new quote of the day (QOTD).
 
 ---
 
-## 🚀 Features
+## ✨ Features
 
-- **Display Daily Quote:**  
-  Shows a motivational quote on the main screen, along with today’s date.
-
-- **Reload Quote:**  
-  Tap a button to get a new, randomly selected quote.
-
-- **Share Quote:**  
-  Share the currently displayed quote via other apps or copy it to your clipboard.
-
-- **Favorite Quotes:**  
-  Mark quotes as favorites and view your saved favorites in a dedicated screen. Favorites are stored locally on your device.
-
-- **Quote History:**  
-  See a list of all quotes shown in your current app session.
-
-- **(Optional) Theme Switcher:**  
-  Toggle between light and dark mode for a more personalized look.
+- **Quote of the Day**: Get a fresh, motivational quote every morning via notification.
+- **Browse Quotes**: Explore quotes by category, author, or at random.
+- **Favorites**: Save your favorite quotes locally for quick access.
+- **Daily Notifications**: Receive a daily notification at your chosen time with the QOTD.
+- **Beautiful UI**: Clean, simple, and responsive design.
+- **Offline Support**: Previously loaded quotes and favorites are available offline.
+- **Dark Mode**: Supports both light and dark themes.
 
 ---
 
-## 🏗️ Planned Features
+## 📱 Screenshots
 
-- **Daily Notification (Stretch Goal):**  
-  Receive a daily notification with a motivational quote.
-
-- **Home Screen Widget (Post-Core):**  
-  Add a widget to your Android home screen to see quotes without opening the app.
+> _Add screenshots of your app here (e.g., home screen, quote detail, favorites, etc.)_
 
 ---
 
-## 📱 Tech Stack
+## 🚀 Getting Started
+
+### 1. **Clone the repo**
+
+```sh
+git clone https://github.com/YonAndualem/DailyDose.git
+cd DailyDose
+```
+
+### 2. **Install dependencies**
+
+```sh
+npm install
+# or
+yarn
+```
+
+### 3. **Start the development server**
+
+```sh
+npx expo start
+```
+
+Open the Expo Go app on your device and scan the QR code, or run on emulator:
+
+- Android: `npx expo run:android`
+- iOS: `npx expo run:ios` _(Mac required)_
+
+---
+
+## 🔔 Building APK / iOS
+
+To build a standalone app for Android or iOS using Expo EAS:
+
+1. **Install EAS CLI**
+   ```sh
+   npm install -g eas-cli
+   ```
+
+2. **Login**
+   ```sh
+   eas login
+   ```
+
+3. **Build for Android**
+   ```sh
+   eas build -p android --profile production
+   ```
+   Download the APK/AAB from the Expo dashboard.
+
+4. **Build for iOS**
+   ```sh
+   eas build -p ios --profile production
+   ```
+   Requires an Apple Developer account and a Mac for local builds.
+
+For more, see the [Expo EAS Build docs](https://docs.expo.dev/build/introduction/).
+
+---
+
+## 🛠️ Project Structure
+
+```
+DailyDose/
+├── assets/
+│   └── images/
+│       ├── icon.png
+│       ├── adaptive-icon.png
+│       └── splash-icon.png
+├── components/
+├── screens/
+├── utils/
+│   ├── api.ts
+│   └── notifications.ts
+├── App.tsx
+├── app.json
+└── ...
+```
+
+---
+
+## ⚙️ Configuration
+
+- **Expo Config**: `app.json` contains settings for app name, icons, splash, and notifications.
+- **API**: Set your quote API base URL in `utils/api.ts`.
+
+---
+
+## 🧩 Dependencies
 
 - [React Native](https://reactnative.dev/)
-- Local storage with AsyncStorage
-- Native sharing and clipboard APIs
-- Simple, modular component structure
+- [Expo](https://expo.dev/)
+- [expo-notifications](https://docs.expo.dev/versions/latest/sdk/notifications/)
+- [expo-router](https://expo.github.io/router/docs)
+- [@react-native-picker/picker](https://github.com/react-native-picker/picker)
+- and more (see `package.json`)
 
 ---
 
-## 🎯 Project Goals
+## 🐞 Troubleshooting
 
-This app is designed as a learning project for React Native beginners.  
-It focuses on core concepts such as navigation, local storage, UI components, and basic native integrations.
-
----
-
-## 🛠️ Getting Started
-
-1. **Clone the repo:**  
-   ```bash
-   git clone https://github.com/your-username/dailydose.git
-   cd dailydose
-   ```
-
-2. **Install dependencies:**  
-   ```bash
-   npm install
-   ```
-
-3. **Run Metro Bundler:**  
-   ```bash
-   npm start
-   ```
-
-4. **Launch on Android device:**  
-   ```bash
-   npm run android
-   ```
-   > For wireless debugging, ensure your device is connected via `adb` over Wi-Fi.
+- **App fails to build?**
+  - Make sure all icon and splash images exist and are square PNGs.
+  - Run `npx expo-doctor` for health checks.
+- **Notifications not showing?**
+  - Ensure notification permissions are granted.
+  - Check your notification scheduling code in `utils/notifications.ts`.
+- **Build takes too long?**
+  - First build on EAS/cloud may take 10–20 minutes. Subsequent builds are faster.
 
 ---
 
-## 🤝 Contributing
+---
 
-Pull requests and suggestions are welcome!  
-Feel free to open an issue for feature requests or questions.
+## 🙌 Acknowledgments
+
+- [Expo](https://expo.dev/)
+- [React Native](https://reactnative.dev/)
 
 ---
 
-## 📄 License
+## 💡 Contributing
 
-This project is open source and free to use for learning and inspiration.
+Pull requests are welcome! Please open an issue to discuss what you’d like to change first.
+
+---
+
+## 📬 Contact
+
+Made by [YonAndualem](https://github.com/YonAndualem)
