@@ -9,10 +9,10 @@ import NameStep from "./personalize/NameStep";
 import UsernameStep from "./personalize/UsernameStep";
 import ReligionStep from "./personalize/ReligionStep";
 import MoodStep from "./personalize/MoodStep";
+import LifeAspectStep from "./personalize/LifeAspectStep";
+
 
 // Example options for religion, feelings, etc.
-const religions = ["None", "Christianity", "Islam", "Judaism", "Other"];
-const moods = ["Happy", "Sad", "Excited", "Anxious", "Calm"];
 const lifeAspects = ["Self-love", "Relationships", "Career", "Health", "Spirituality"];
 const quoteThemes = [
     { key: "dark", label: "Dark", preview: require("../assets/images/onboarding/onboarding1.png") },
@@ -26,31 +26,6 @@ const { width } = Dimensions.get("window");
 
 // STEP COMPONENTS
 
-function StepLifeAspect({ value, onChange, onNext, onPrev }: { value: string, onChange: (v: string) => void, onNext: () => void, onPrev: () => void }) {
-    return (
-        <View style={styles.stepContainer}>
-            <Text style={[styles.logo, { fontFamily: "Pacifico" }]}>DailyDose</Text>
-            <Text style={styles.label}>What aspect of life do you want to improve?</Text>
-            {lifeAspects.map((aspect) => (
-                <TouchableOpacity
-                    key={aspect}
-                    style={[styles.optionButton, value === aspect && styles.optionButtonSelected]}
-                    onPress={() => onChange(aspect)}
-                >
-                    <Text style={[styles.optionText, value === aspect && styles.optionTextSelected]}>{aspect}</Text>
-                </TouchableOpacity>
-            ))}
-            <View style={styles.row}>
-                <TouchableOpacity style={styles.secondaryButton} onPress={onPrev}>
-                    <Text style={styles.secondaryButtonText}>Back</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={onNext} disabled={!value}>
-                    <Text style={styles.buttonText}>Next</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
-}
 
 function StepTheme({ value, onChange, onNext, onPrev }: { value: string, onChange: (v: string) => void, onNext: () => void, onPrev: () => void }) {
     return (
@@ -148,7 +123,7 @@ export default function PersonalizeScreen() {
         <StepBirthday value={birthday} onChange={setBirthday} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={3} />,
         <ReligionStep value={religion} onChange={setReligion} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={4} />,
         <MoodStep value={mood} onChange={setMood} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={5} />,
-        <StepLifeAspect value={lifeAspect} onChange={setLifeAspect} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={6} />,
+        <LifeAspectStep value={lifeAspect} onChange={setLifeAspect} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={6} />,
         <StepTheme value={theme} onChange={setTheme} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={7} />,
         <StepFrequency value={frequency} onChange={setFrequency} onNext={() => setStep(step + 1)} onPrev={() => setStep(step - 1)} key={8} />,
         <StepSummary
