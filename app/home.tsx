@@ -9,7 +9,8 @@ import ThemeChangeModal from "./components/ThemeChangeModal";
 import { useThemeContext } from "./context/ThemeContext";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
-import { LinearGradient } from 'expo-linear-gradient';
+import { cacheQuotes, getCachedQuotes, cacheQOTD, getCachedQOTD } from "../utils/quotesCache";
+import { LinearGradient } from "expo-linear-gradient";
 
 // Utility to get all user personalization data from AsyncStorage
 const getUserPersonalData = async (): Promise<{
@@ -31,16 +32,13 @@ const getUserPersonalData = async (): Promise<{
   }
 };
 
-// Utility: Check if today is a public holiday (mock, replace with real logic/api as needed)
 function getHolidayGreeting(): string | null {
   const today = new Date();
   if (today.getMonth() === 11 && today.getDate() === 25) return "Christmas";
-  // Add more holidays as needed
   return null;
 }
 
-// The image-only card for sharing
-
+// Attractive gradient card for sharing
 function QuoteImageCard({ quote, author, theme }: { quote: string, author: string, theme: any }) {
   return (
     <LinearGradient
@@ -101,7 +99,7 @@ function QuoteImageCard({ quote, author, theme }: { quote: string, author: strin
           textShadowRadius: 2,
         }}
       >
-        {author}
+        — {author}
       </Text>
       <Text
         style={{
@@ -120,25 +118,19 @@ function QuoteImageCard({ quote, author, theme }: { quote: string, author: strin
 
 export default function HomeScreen() {
   const router = useRouter();
-
-  // ---- THEME CONTEXT ----
   const { themeType, setThemeType, theme } = useThemeContext();
 
-  // QOTD state
   const [qotd, setQotd] = useState<Quote | null>(null);
   const [qotdLoading, setQotdLoading] = useState(true);
   const [qotdIsFavorite, setQotdIsFavorite] = useState(false);
 
-  // Random quote state
   const [randomQuote, setRandomQuote] = useState<Quote | null>(null);
   const [randomQuoteLoading, setRandomQuoteLoading] = useState(true);
   const [availableIds, setAvailableIds] = useState<number[]>([]);
   const [randomIsFavorite, setRandomIsFavorite] = useState(false);
 
-  // Modal
   const [themeModal, setThemeModal] = useState(false);
 
-  // Personalization data from async storage
   const [personalData, setPersonalData] = useState<{
     name?: string;
     username?: string;
@@ -150,15 +142,13 @@ export default function HomeScreen() {
     frequency?: string;
   } | null>(null);
 
-  // Holiday logic
   const [holiday, setHoliday] = useState<string | null>(null);
 
-  // Refs for sharing image cards
   const qotdImageRef = useRef<View>(null);
   const randomImageRef = useRef<View>(null);
 
+  // Try to fetch QOTD, fallback to cache on failure
   useEffect(() => {
-    // Load all personalization data
     getUserPersonalData().then(data => {
       setPersonalData(data);
     });
@@ -169,11 +159,38 @@ export default function HomeScreen() {
     const fetchQotd = async () => {
       setQotdLoading(true);
       try {
+        // Try to load today's QOTD from cache first
+        const cached = await getCachedQOTD();
+        if (cached) {
+          setQotd(cached);
+          setQotdIsFavorite(await isFavorite(cached.id));
+          setQotdLoading(false);
+          return;
+        }
+        // Otherwise, fetch from API
         const data = await getQuoteOfTheDay();
         setQotd(data);
         setQotdIsFavorite(await isFavorite(data.id));
-      } catch (e: any) {
-        Alert.alert("Error", e.message || "Failed to load quote of the day.");
+        await cacheQOTD(data); // Save as today's QOTD
+        // Optionally add to random quotes cache too
+        const cache = await getCachedQuotes() || [];
+        const newCache = [data, ...cache.filter(q => q.id !== data.id)];
+        await cacheQuotes(newCache);
+      } catch {
+        // Fallback to cached QOTD if available, or to cachedQuotes
+        const cached = await getCachedQOTD();
+        if (cached) {
+          setQotd(cached);
+          setQotdIsFavorite(await isFavorite(cached.id));
+        } else {
+          const cache = await getCachedQuotes();
+          if (cache && cache.length > 0) {
+            setQotd(cache[0]);
+            setQotdIsFavorite(await isFavorite(cache[0].id));
+          } else {
+            setQotd(null);
+          }
+        }
       }
       setQotdLoading(false);
     };
@@ -184,11 +201,8 @@ export default function HomeScreen() {
     const fetchRandomQuote = async () => {
       setRandomQuoteLoading(true);
       try {
-        // Get all categories
         const cats = await getAllCategories();
-        // Filter out empty categories just in case
         const category = cats.length > 0 ? cats[Math.floor(Math.random() * cats.length)].name : "";
-        // Get random quote id from category
         const ids = await getQuoteIdsByCategory(category);
         setAvailableIds(ids);
         if (ids.length > 0) {
@@ -196,13 +210,27 @@ export default function HomeScreen() {
           const data = await getQuoteById(id);
           setRandomQuote(data);
           setRandomIsFavorite(await isFavorite(data.id));
+          // Save to cache
+          const cache = await getCachedQuotes() || [];
+          const newCache = [data, ...cache.filter(q => q.id !== data.id)];
+          await cacheQuotes(newCache.slice(0, 20));
         } else {
           setRandomQuote(null);
           setRandomIsFavorite(false);
         }
       } catch {
-        setRandomQuote(null);
-        setRandomIsFavorite(false);
+        // Fallback to cache
+        const cache = await getCachedQuotes();
+        if (cache && cache.length > 1) {
+          setRandomQuote(cache[1]);
+          setRandomIsFavorite(await isFavorite(cache[1].id));
+        } else if (cache && cache.length > 0) {
+          setRandomQuote(cache[0]);
+          setRandomIsFavorite(await isFavorite(cache[0].id));
+        } else {
+          setRandomQuote(null);
+          setRandomIsFavorite(false);
+        }
       }
       setRandomQuoteLoading(false);
     };
@@ -210,14 +238,33 @@ export default function HomeScreen() {
   }, []);
 
   const reloadRandomQuote = async () => {
-    if (availableIds.length === 0) return;
+    if (availableIds.length === 0) {
+      // Try from cache
+      const cache = await getCachedQuotes();
+      if (cache && cache.length > 1) {
+        setRandomQuote(cache[1]);
+        setRandomIsFavorite(await isFavorite(cache[1].id));
+      }
+      return;
+    }
     setRandomQuoteLoading(true);
     try {
       const id = availableIds[Math.floor(Math.random() * availableIds.length)];
       const data = await getQuoteById(id);
       setRandomQuote(data);
       setRandomIsFavorite(await isFavorite(data.id));
-    } catch { }
+      // Save to cache
+      const cache = await getCachedQuotes() || [];
+      const newCache = [data, ...cache.filter(q => q.id !== data.id)];
+      await cacheQuotes(newCache.slice(0, 20));
+    } catch {
+      // Fallback to cache
+      const cache = await getCachedQuotes();
+      if (cache && cache.length > 1) {
+        setRandomQuote(cache[1]);
+        setRandomIsFavorite(await isFavorite(cache[1].id));
+      }
+    }
     setRandomQuoteLoading(false);
   };
 
@@ -243,7 +290,6 @@ export default function HomeScreen() {
     }
   };
 
-  // --- SHARE QUOTE AS IMAGE ---
   const shareQuoteAsImage = async (which: "qotd" | "random") => {
     const ref = which === "qotd" ? qotdImageRef : randomImageRef;
     try {
@@ -257,7 +303,6 @@ export default function HomeScreen() {
     }
   };
 
-  // fallback: share as text if image sharing fails or not supported
   const shareQuote = async (quote?: Quote) => {
     if (!quote) return;
     try {
@@ -269,19 +314,16 @@ export default function HomeScreen() {
 
   const dateStr = new Date().toLocaleDateString(undefined, { weekday: "long", day: "2-digit", month: "short", year: "numeric" });
 
-  // NAV (favorites button at the end)
   const navIcons = [
     { name: "settings", icon: <Ionicons name="settings-outline" size={26} color={theme.primary} />, onPress: () => router.push("/settings") },
     { name: "home", icon: <Ionicons name="home" size={32} color={theme.primary} />, onPress: () => { } },
     { name: "favorites", icon: <Ionicons name="star-outline" size={26} color={theme.primary} />, onPress: () => router.push("/favorites") },
   ];
 
-  // Equal height for both cards
   const cardHeight = 270;
 
   return (
     <View style={styles(theme).mainContainer}>
-      {/* Theme Modal */}
       <ThemeChangeModal
         visible={themeModal}
         onClose={() => setThemeModal(false)}
@@ -291,7 +333,6 @@ export default function HomeScreen() {
         currentTheme={themeType}
       />
 
-      {/* Header */}
       <View style={styles(theme).header}>
         <TouchableOpacity onPress={() => router.push("/profile")} accessibilityLabel="Profile">
           <Ionicons name="person-circle-outline" size={34} color={theme.text} />
@@ -302,18 +343,14 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Date and Greeting */}
       <Text style={styles(theme).date}>{dateStr}</Text>
       {holiday && <Text style={styles(theme).greeting}>Happy {holiday}!</Text>}
       {!holiday && <Text style={styles(theme).greeting}>
         {personalData?.name ? `Hi ${personalData.name}!` : "Hi!"}
       </Text>}
 
-      {/* Two Quote Cards */}
       <View style={styles(theme).quoteCardsContainer}>
-        {/* QOTD CARD */}
         <View style={[styles(theme).quoteCard, { height: cardHeight }]}>
-          {/* No section title here */}
           {qotdLoading ? (
             <ActivityIndicator size="large" color={theme.primary} />
           ) : qotd ? (
@@ -332,20 +369,16 @@ export default function HomeScreen() {
                 color={theme.primary}
               />
             </TouchableOpacity>
-            {/* Share as image */}
             <TouchableOpacity onPress={() => shareQuoteAsImage("qotd")} accessibilityLabel="Share as Image">
               <MaterialCommunityIcons name="image" size={24} color={theme.primary} style={{ marginLeft: 20 }} />
             </TouchableOpacity>
-            {/* Share as text (fallback) */}
             <TouchableOpacity onPress={() => shareQuote(qotd || undefined)} accessibilityLabel="Share as Text">
               <Ionicons name="share-social-outline" size={24} color={theme.primary} style={{ marginLeft: 20 }} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* RANDOM CARD */}
         <View style={[styles(theme).quoteCard, { height: cardHeight }]}>
-          {/* No section title here */}
           {randomQuoteLoading ? (
             <ActivityIndicator size="large" color={theme.primary} />
           ) : randomQuote ? (
@@ -364,11 +397,9 @@ export default function HomeScreen() {
                 color={theme.primary}
               />
             </TouchableOpacity>
-            {/* Share as image */}
             <TouchableOpacity onPress={() => shareQuoteAsImage("random")} accessibilityLabel="Share as Image">
               <MaterialCommunityIcons name="image" size={24} color={theme.primary} style={{ marginLeft: 20 }} />
             </TouchableOpacity>
-            {/* Share as text (fallback) */}
             <TouchableOpacity onPress={() => shareQuote(randomQuote || undefined)} accessibilityLabel="Share as Text">
               <Ionicons name="share-social-outline" size={24} color={theme.primary} style={{ marginLeft: 20 }} />
             </TouchableOpacity>
@@ -381,7 +412,6 @@ export default function HomeScreen() {
 
       {/* --- HIDDEN IMAGE VIEWS FOR SHARING --- */}
       <View style={{ position: "absolute", left: -9999, top: -9999 }}>
-        {/* QOTD */}
         {qotd && (
           <View ref={qotdImageRef} collapsable={false}>
             <QuoteImageCard
@@ -391,7 +421,6 @@ export default function HomeScreen() {
             />
           </View>
         )}
-        {/* Random */}
         {randomQuote && (
           <View ref={randomImageRef} collapsable={false}>
             <QuoteImageCard
@@ -403,7 +432,6 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* Bottom Navigation */}
       <View style={[styles(theme).navBar, { backgroundColor: theme.background }]}>
         {navIcons.map((item, idx) => (
           <TouchableOpacity key={item.name} style={styles(theme).navIcon} onPress={item.onPress}>
