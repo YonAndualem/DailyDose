@@ -12,7 +12,6 @@ import * as Sharing from "expo-sharing";
 import { cacheQuotes, getCachedQuotes, cacheQOTD, getCachedQOTD } from "../utils/quotesCache";
 import { LinearGradient } from "expo-linear-gradient";
 
-// Utility to get all user personalization data from AsyncStorage
 const getUserPersonalData = async (): Promise<{
   name?: string;
   username?: string;
