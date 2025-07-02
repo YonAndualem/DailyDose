@@ -146,7 +146,7 @@ export default function HomeScreen() {
   const qotdImageRef = useRef<View>(null);
   const randomImageRef = useRef<View>(null);
 
-  // Try to fetch QOTD, fallback to cache on failure
+  
   useEffect(() => {
     getUserPersonalData().then(data => {
       setPersonalData(data);
