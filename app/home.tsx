@@ -3,7 +3,7 @@ import { View, Text, ActivityIndicator, Alert, StyleSheet, TouchableOpacity, Sha
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getQuoteOfTheDay, getAllCategories, getQuoteIdsByCategory, getQuoteById, Quote } from "../utils/api";
+import { getQuoteOfTheDay, getAllCategories, getQuoteUuidsByCategory, getQuoteByUuid, Quote } from "../utils/api";
 import { addFavorite, removeFavorite, isFavorite } from "../utils/favorites";
 import ThemeChangeModal from "./components/ThemeChangeModal";
 import { useThemeContext } from "./context/ThemeContext";
@@ -125,7 +125,7 @@ export default function HomeScreen() {
 
   const [randomQuote, setRandomQuote] = useState<Quote | null>(null);
   const [randomQuoteLoading, setRandomQuoteLoading] = useState(true);
-  const [availableIds, setAvailableIds] = useState<number[]>([]);
+  const [availableUuids, setAvailableUuids] = useState<string[]>([]);
   const [randomIsFavorite, setRandomIsFavorite] = useState(false);
 
   const [themeModal, setThemeModal] = useState(false);
@@ -146,7 +146,6 @@ export default function HomeScreen() {
   const qotdImageRef = useRef<View>(null);
   const randomImageRef = useRef<View>(null);
 
-  
   useEffect(() => {
     getUserPersonalData().then(data => {
       setPersonalData(data);
@@ -162,30 +161,30 @@ export default function HomeScreen() {
         const cached = await getCachedQOTD();
         if (cached) {
           setQotd(cached);
-          setQotdIsFavorite(await isFavorite(cached.id));
+          setQotdIsFavorite(await isFavorite(cached.uuid));
           setQotdLoading(false);
           return;
         }
         // Otherwise, fetch from API
         const data = await getQuoteOfTheDay();
         setQotd(data);
-        setQotdIsFavorite(await isFavorite(data.id));
+        setQotdIsFavorite(await isFavorite(data.uuid));
         await cacheQOTD(data); // Save as today's QOTD
         // Optionally add to random quotes cache too
         const cache = await getCachedQuotes() || [];
-        const newCache = [data, ...cache.filter(q => q.id !== data.id)];
+        const newCache = [data, ...cache.filter(q => q.uuid !== data.uuid)];
         await cacheQuotes(newCache);
       } catch {
         // Fallback to cached QOTD if available, or to cachedQuotes
         const cached = await getCachedQOTD();
         if (cached) {
           setQotd(cached);
-          setQotdIsFavorite(await isFavorite(cached.id));
+          setQotdIsFavorite(await isFavorite(cached.uuid));
         } else {
           const cache = await getCachedQuotes();
           if (cache && cache.length > 0) {
             setQotd(cache[0]);
-            setQotdIsFavorite(await isFavorite(cache[0].id));
+            setQotdIsFavorite(await isFavorite(cache[0].uuid));
           } else {
             setQotd(null);
           }
@@ -202,16 +201,16 @@ export default function HomeScreen() {
       try {
         const cats = await getAllCategories();
         const category = cats.length > 0 ? cats[Math.floor(Math.random() * cats.length)].name : "";
-        const ids = await getQuoteIdsByCategory(category);
-        setAvailableIds(ids);
-        if (ids.length > 0) {
-          const id = ids[Math.floor(Math.random() * ids.length)];
-          const data = await getQuoteById(id);
+        const uuids = await getQuoteUuidsByCategory(category);
+        setAvailableUuids(uuids);
+        if (uuids.length > 0) {
+          const uuid = uuids[Math.floor(Math.random() * uuids.length)];
+          const data = await getQuoteByUuid(uuid);
           setRandomQuote(data);
-          setRandomIsFavorite(await isFavorite(data.id));
+          setRandomIsFavorite(await isFavorite(data.uuid));
           // Save to cache
           const cache = await getCachedQuotes() || [];
-          const newCache = [data, ...cache.filter(q => q.id !== data.id)];
+          const newCache = [data, ...cache.filter(q => q.uuid !== data.uuid)];
           await cacheQuotes(newCache.slice(0, 20));
         } else {
           setRandomQuote(null);
@@ -222,10 +221,10 @@ export default function HomeScreen() {
         const cache = await getCachedQuotes();
         if (cache && cache.length > 1) {
           setRandomQuote(cache[1]);
-          setRandomIsFavorite(await isFavorite(cache[1].id));
+          setRandomIsFavorite(await isFavorite(cache[1].uuid));
         } else if (cache && cache.length > 0) {
           setRandomQuote(cache[0]);
-          setRandomIsFavorite(await isFavorite(cache[0].id));
+          setRandomIsFavorite(await isFavorite(cache[0].uuid));
         } else {
           setRandomQuote(null);
           setRandomIsFavorite(false);
@@ -237,31 +236,31 @@ export default function HomeScreen() {
   }, []);
 
   const reloadRandomQuote = async () => {
-    if (availableIds.length === 0) {
+    if (availableUuids.length === 0) {
       // Try from cache
       const cache = await getCachedQuotes();
       if (cache && cache.length > 1) {
         setRandomQuote(cache[1]);
-        setRandomIsFavorite(await isFavorite(cache[1].id));
+        setRandomIsFavorite(await isFavorite(cache[1].uuid));
       }
       return;
     }
     setRandomQuoteLoading(true);
     try {
-      const id = availableIds[Math.floor(Math.random() * availableIds.length)];
-      const data = await getQuoteById(id);
+      const uuid = availableUuids[Math.floor(Math.random() * availableUuids.length)];
+      const data = await getQuoteByUuid(uuid);
       setRandomQuote(data);
-      setRandomIsFavorite(await isFavorite(data.id));
+      setRandomIsFavorite(await isFavorite(data.uuid));
       // Save to cache
       const cache = await getCachedQuotes() || [];
-      const newCache = [data, ...cache.filter(q => q.id !== data.id)];
+      const newCache = [data, ...cache.filter(q => q.uuid !== data.uuid)];
       await cacheQuotes(newCache.slice(0, 20));
     } catch {
       // Fallback to cache
       const cache = await getCachedQuotes();
       if (cache && cache.length > 1) {
         setRandomQuote(cache[1]);
-        setRandomIsFavorite(await isFavorite(cache[1].id));
+        setRandomIsFavorite(await isFavorite(cache[1].uuid));
       }
     }
     setRandomQuoteLoading(false);
@@ -270,7 +269,7 @@ export default function HomeScreen() {
   const toggleQotdFavorite = async () => {
     if (!qotd) return;
     if (qotdIsFavorite) {
-      await removeFavorite(qotd.id);
+      await removeFavorite(qotd.uuid);
       setQotdIsFavorite(false);
     } else {
       await addFavorite(qotd);
@@ -281,7 +280,7 @@ export default function HomeScreen() {
   const toggleRandomFavorite = async () => {
     if (!randomQuote) return;
     if (randomIsFavorite) {
-      await removeFavorite(randomQuote.id);
+      await removeFavorite(randomQuote.uuid);
       setRandomIsFavorite(false);
     } else {
       await addFavorite(randomQuote);
