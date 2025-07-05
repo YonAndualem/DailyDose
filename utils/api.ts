@@ -2,7 +2,7 @@ const API_BASE_URL = "https://daily-dose-backend-yonas-berhanu-andualems-project
 
 export interface Quote {
     id: number;
-    uuid?: string;
+    uuid: string; // Now required!
     quote: string;
     author: string;
     category?: string;
@@ -17,18 +17,18 @@ export async function getQuoteOfTheDay(): Promise<Quote> {
     return res.json();
 }
 
-// Get all quote IDs
-export async function getAllQuoteIds(): Promise<number[]> {
+// Get all quote UUIDs
+export async function getAllQuoteUuids(): Promise<string[]> {
     const res = await fetch(`${API_BASE_URL}/quotes`);
     if (!res.ok) throw new Error("Failed to fetch quotes.");
     const quotes = await res.json();
-    return quotes.map((q: Quote) => q.id);
+    return quotes.map((q: Quote) => q.uuid);
 }
 
-// Get specific quote by ID
-export async function getQuoteById(id: number): Promise<Quote> {
-    const res = await fetch(`${API_BASE_URL}/quotes/${id}`);
-    if (!res.ok) throw new Error("Failed to fetch quote by ID.");
+// Get specific quote by UUID
+export async function getQuoteByUuid(uuid: string): Promise<Quote> {
+    const res = await fetch(`${API_BASE_URL}/quotes/uuid/${uuid}`);
+    if (!res.ok) throw new Error("Failed to fetch quote by UUID.");
     return res.json();
 }
 
@@ -39,10 +39,10 @@ export async function getAllCategories(): Promise<{ id: number; name: string }[]
     return res.json();
 }
 
-// Get quote IDs by category
-export async function getQuoteIdsByCategory(category: string): Promise<number[]> {
+// Get quote UUIDs by category
+export async function getQuoteUuidsByCategory(category: string): Promise<string[]> {
     const res = await fetch(`${API_BASE_URL}/quotes?category=${encodeURIComponent(category)}`);
     if (!res.ok) throw new Error("Failed to fetch quotes by category.");
     const quotes = await res.json();
-    return quotes.map((q: Quote) => q.id);
-  }
+    return quotes.map((q: Quote) => q.uuid);
+}

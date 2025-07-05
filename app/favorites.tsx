@@ -100,17 +100,21 @@ export default function FavoritesScreen() {
 
     // Remove modal state
     const [removeModal, setRemoveModal] = useState(false);
-    const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null);
+    const [pendingRemoveUuid, setPendingRemoveUuid] = useState<string | null>(null);
 
-    // Refs for sharing image cards, one per quote id
-    const imageRefs = useRef<{ [id: number]: View | null }>({});
+    // Refs for sharing image cards, one per quote uuid
+    const imageRefs = useRef<{ [uuid: string]: View | null }>({});
 
     useEffect(() => {
         loadFavorites();
     }, []);
 
     const loadFavorites = async () => {
-        const favs = await getFavorites();
+        const favsObj = await getFavorites();
+        // Convert to array if stored as object
+        const favs: Quote[] = Array.isArray(favsObj)
+            ? favsObj
+            : Object.values(favsObj);
         setFavorites(favs);
     };
 
@@ -126,7 +130,7 @@ export default function FavoritesScreen() {
 
     const shareQuoteAsImage = async (quote: Quote) => {
         try {
-            const ref = imageRefs.current[quote.id];
+            const ref = imageRefs.current[quote.uuid];
             if (!ref) throw new Error("Image ref not found.");
             const uri = await captureRef(ref, {
                 format: "png",
@@ -138,10 +142,10 @@ export default function FavoritesScreen() {
         }
     };
 
-    const handleRemove = async (id: number) => {
-        await removeFavorite(id);
+    const handleRemove = async (uuid: string) => {
+        await removeFavorite(uuid);
         setRemoveModal(false);
-        setPendingRemoveId(null);
+        setPendingRemoveUuid(null);
         loadFavorites();
     };
 
@@ -182,7 +186,7 @@ export default function FavoritesScreen() {
                             </Pressable>
                             <Pressable
                                 style={[modalStyles.button, modalStyles.removeButton]}
-                                onPress={() => pendingRemoveId && handleRemove(pendingRemoveId)}
+                                onPress={() => pendingRemoveUuid && handleRemove(pendingRemoveUuid)}
                             >
                                 <Text style={[modalStyles.buttonText, { color: "#fff" }]}>Remove</Text>
                             </Pressable>
@@ -207,7 +211,7 @@ export default function FavoritesScreen() {
             ) : (
                 <FlatList
                     data={favorites}
-                    keyExtractor={(item) => item.id.toString()}
+                    keyExtractor={(item) => item.uuid}
                     contentContainerStyle={{ paddingBottom: 110, paddingTop: 8 }}
                     renderItem={({ item }) => (
                         <View style={styles(theme).quoteCard}>
@@ -230,7 +234,7 @@ export default function FavoritesScreen() {
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     onPress={() => {
-                                        setPendingRemoveId(item.id);
+                                        setPendingRemoveUuid(item.uuid);
                                         setRemoveModal(true);
                                     }}
                                     accessibilityLabel="Remove from favorites"
@@ -241,7 +245,7 @@ export default function FavoritesScreen() {
                             {/* Hidden view for image sharing */}
                             <View
                                 ref={ref => {
-                                    imageRefs.current[item.id] = ref;
+                                    imageRefs.current[item.uuid] = ref;
                                 }}
                                 collapsable={false}
                                 style={{ position: "absolute", left: -9999, top: -9999 }}

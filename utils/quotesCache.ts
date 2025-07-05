@@ -5,10 +5,14 @@ import { Quote } from "./api";
 const CACHED_QUOTES_KEY = "cachedQuotes";
 const CACHED_QOTD_KEY = "cachedQOTD";
 
-// Save recent quotes (up to 30)
+// Save recent quotes (up to 30), deduplicated by uuid
 export async function cacheQuotes(quotes: Quote[]) {
     try {
-        await AsyncStorage.setItem(CACHED_QUOTES_KEY, JSON.stringify(quotes.slice(0, 30)));
+        // Deduplicate by uuid
+        const uniqueQuotes = Array.from(
+            new Map(quotes.map(q => [q.uuid, q])).values()
+        );
+        await AsyncStorage.setItem(CACHED_QUOTES_KEY, JSON.stringify(uniqueQuotes.slice(0, 30)));
     } catch (e) { }
 }
 
