@@ -3,7 +3,7 @@ import { View, Text, ActivityIndicator, Alert, StyleSheet, TouchableOpacity, Sha
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getQuoteOfTheDay, getAllCategories, getQuoteUuidsByCategory, getQuoteByUuid, Quote } from "../utils/api";
+import { getQuoteOfTheDay, getAllQuoteUuids, getQuoteByUuid, Quote } from "../utils/api";
 import { addFavorite, removeFavorite, isFavorite } from "../utils/favorites";
 import ThemeChangeModal from "./components/ThemeChangeModal";
 import { useThemeContext } from "./context/ThemeContext";
@@ -12,32 +12,6 @@ import * as Sharing from "expo-sharing";
 import { cacheQuotes, getCachedQuotes, cacheQOTD, getCachedQOTD } from "../utils/quotesCache";
 import { LinearGradient } from "expo-linear-gradient";
 
-const getUserPersonalData = async (): Promise<{
-  name?: string;
-  username?: string;
-  birthday?: string;
-  religion?: string;
-  mood?: string;
-  lifeAspect?: string;
-  theme?: string;
-  frequency?: string;
-} | null> => {
-  const raw = await AsyncStorage.getItem("userPersonalData");
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-};
-
-function getHolidayGreeting(): string | null {
-  const today = new Date();
-  if (today.getMonth() === 11 && today.getDate() === 25) return "Christmas";
-  return null;
-}
-
-// Attractive gradient card for sharing
 function QuoteImageCard({ quote, author, theme }: { quote: string, author: string, theme: any }) {
   return (
     <LinearGradient
@@ -115,21 +89,48 @@ function QuoteImageCard({ quote, author, theme }: { quote: string, author: strin
   );
 }
 
+const getUserPersonalData = async (): Promise<{
+  name?: string;
+  username?: string;
+  birthday?: string;
+  religion?: string;
+  mood?: string;
+  lifeAspect?: string;
+  theme?: string;
+  frequency?: string;
+} | null> => {
+  const raw = await AsyncStorage.getItem("userPersonalData");
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+function getHolidayGreeting(): string | null {
+  const today = new Date();
+  if (today.getMonth() === 11 && today.getDate() === 25) return "Christmas";
+  return null;
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const { themeType, setThemeType, theme } = useThemeContext();
 
+  // QOTD state
   const [qotd, setQotd] = useState<Quote | null>(null);
   const [qotdLoading, setQotdLoading] = useState(true);
   const [qotdIsFavorite, setQotdIsFavorite] = useState(false);
 
+  // Random quote state
+  const [availableUuids, setAvailableUuids] = useState<string[]>([]);
   const [randomQuote, setRandomQuote] = useState<Quote | null>(null);
   const [randomQuoteLoading, setRandomQuoteLoading] = useState(true);
-  const [availableUuids, setAvailableUuids] = useState<string[]>([]);
   const [randomIsFavorite, setRandomIsFavorite] = useState(false);
 
+  // UI & theme state
   const [themeModal, setThemeModal] = useState(false);
-
   const [personalData, setPersonalData] = useState<{
     name?: string;
     username?: string;
@@ -140,24 +141,22 @@ export default function HomeScreen() {
     theme?: string;
     frequency?: string;
   } | null>(null);
-
   const [holiday, setHoliday] = useState<string | null>(null);
 
   const qotdImageRef = useRef<View>(null);
   const randomImageRef = useRef<View>(null);
 
+  // Fetch personal data and holiday
   useEffect(() => {
-    getUserPersonalData().then(data => {
-      setPersonalData(data);
-    });
+    getUserPersonalData().then(data => setPersonalData(data));
     setHoliday(getHolidayGreeting());
   }, []);
 
+  // QOTD logic
   useEffect(() => {
     const fetchQotd = async () => {
       setQotdLoading(true);
       try {
-        // Try to load today's QOTD from cache first
         const cached = await getCachedQOTD();
         if (cached) {
           setQotd(cached);
@@ -165,17 +164,14 @@ export default function HomeScreen() {
           setQotdLoading(false);
           return;
         }
-        // Otherwise, fetch from API
         const data = await getQuoteOfTheDay();
         setQotd(data);
         setQotdIsFavorite(await isFavorite(data.uuid));
-        await cacheQOTD(data); // Save as today's QOTD
-        // Optionally add to random quotes cache too
+        await cacheQOTD(data);
         const cache = await getCachedQuotes() || [];
         const newCache = [data, ...cache.filter(q => q.uuid !== data.uuid)];
         await cacheQuotes(newCache);
       } catch {
-        // Fallback to cached QOTD if available, or to cachedQuotes
         const cached = await getCachedQOTD();
         if (cached) {
           setQotd(cached);
@@ -195,60 +191,43 @@ export default function HomeScreen() {
     fetchQotd();
   }, []);
 
+  // --- Fetch all uuids for random quote logic (only once) ---
   useEffect(() => {
-    const fetchRandomQuote = async () => {
-      setRandomQuoteLoading(true);
+    const fetchAllUuids = async () => {
       try {
-        const cats = await getAllCategories();
-        const category = cats.length > 0 ? cats[Math.floor(Math.random() * cats.length)].name : "";
-        const uuids = await getQuoteUuidsByCategory(category);
+        const uuids = await getAllQuoteUuids();
         setAvailableUuids(uuids);
-        if (uuids.length > 0) {
-          const uuid = uuids[Math.floor(Math.random() * uuids.length)];
-          const data = await getQuoteByUuid(uuid);
-          setRandomQuote(data);
-          setRandomIsFavorite(await isFavorite(data.uuid));
-          // Save to cache
-          const cache = await getCachedQuotes() || [];
-          const newCache = [data, ...cache.filter(q => q.uuid !== data.uuid)];
-          await cacheQuotes(newCache.slice(0, 20));
-        } else {
-          setRandomQuote(null);
-          setRandomIsFavorite(false);
-        }
       } catch {
-        // Fallback to cache
-        const cache = await getCachedQuotes();
-        if (cache && cache.length > 1) {
-          setRandomQuote(cache[1]);
-          setRandomIsFavorite(await isFavorite(cache[1].uuid));
-        } else if (cache && cache.length > 0) {
-          setRandomQuote(cache[0]);
-          setRandomIsFavorite(await isFavorite(cache[0].uuid));
-        } else {
-          setRandomQuote(null);
-          setRandomIsFavorite(false);
-        }
+        setAvailableUuids([]);
       }
-      setRandomQuoteLoading(false);
     };
-    fetchRandomQuote();
+    fetchAllUuids();
   }, []);
 
-  const reloadRandomQuote = async () => {
-    if (availableUuids.length === 0) {
-      // Try from cache
-      const cache = await getCachedQuotes();
-      if (cache && cache.length > 1) {
-        setRandomQuote(cache[1]);
-        setRandomIsFavorite(await isFavorite(cache[1].uuid));
-      }
-      return;
-    }
+  // --- On availableUuids loaded, fetch a random quote ---
+  useEffect(() => {
+    if (availableUuids.length === 0) return;
+    getRandomQuote();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availableUuids]);
+
+  // --- Always pick a different random quote on reload ---
+  const getRandomQuote = async () => {
     setRandomQuoteLoading(true);
     try {
-      const uuid = availableUuids[Math.floor(Math.random() * availableUuids.length)];
-      const data = await getQuoteByUuid(uuid);
+      if (availableUuids.length === 0) {
+        setRandomQuote(null);
+        setRandomIsFavorite(false);
+        setRandomQuoteLoading(false);
+        return;
+      }
+      const currentUuid = randomQuote?.uuid;
+      let possibleUuids = availableUuids;
+      if (currentUuid && availableUuids.length > 1) {
+        possibleUuids = availableUuids.filter(uuid => uuid !== currentUuid);
+      }
+      const nextUuid = possibleUuids[Math.floor(Math.random() * possibleUuids.length)];
+      const data = await getQuoteByUuid(nextUuid);
       setRandomQuote(data);
       setRandomIsFavorite(await isFavorite(data.uuid));
       // Save to cache
@@ -256,12 +235,8 @@ export default function HomeScreen() {
       const newCache = [data, ...cache.filter(q => q.uuid !== data.uuid)];
       await cacheQuotes(newCache.slice(0, 20));
     } catch {
-      // Fallback to cache
-      const cache = await getCachedQuotes();
-      if (cache && cache.length > 1) {
-        setRandomQuote(cache[1]);
-        setRandomIsFavorite(await isFavorite(cache[1].uuid));
-      }
+      setRandomQuote(null);
+      setRandomIsFavorite(false);
     }
     setRandomQuoteLoading(false);
   };
@@ -401,7 +376,7 @@ export default function HomeScreen() {
             <TouchableOpacity onPress={() => shareQuote(randomQuote || undefined)} accessibilityLabel="Share as Text">
               <Ionicons name="share-social-outline" size={24} color={theme.primary} style={{ marginLeft: 20 }} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={reloadRandomQuote} accessibilityLabel="Reload" style={{ marginLeft: 20 }}>
+            <TouchableOpacity onPress={getRandomQuote} accessibilityLabel="Reload" style={{ marginLeft: 20 }}>
               <MaterialCommunityIcons name="reload" size={24} color={theme.primary} />
             </TouchableOpacity>
           </View>
@@ -441,7 +416,7 @@ export default function HomeScreen() {
   );
 }
 
-const styles = (theme: ReturnType<typeof import("./personalize/theme").getTheme>) =>
+const styles = (theme: any) =>
   StyleSheet.create({
     mainContainer: { flex: 1, backgroundColor: theme.background, alignItems: "center", justifyContent: "flex-start" },
     header: {
