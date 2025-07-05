@@ -72,7 +72,7 @@ function QuoteImageCard({ quote, author, theme }: { quote: string, author: strin
           textShadowRadius: 2,
         }}
       >
-        — {author}
+      {author}
       </Text>
       <Text
         style={{
