@@ -68,7 +68,7 @@ To build a standalone app for Android or iOS using Expo EAS:
 
 3. **Build for Android**
    ```sh
-   eas build -p android --profile production
+   eas build -p android --profile preview
    ```
    Download the APK/AAB from the Expo dashboard.
 
